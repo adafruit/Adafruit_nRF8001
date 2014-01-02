@@ -1,10 +1,8 @@
-Adafruit_nRF8001
-================
+# Adafruit_nRF8001 #
 
 Driver and example code for Adafruit's nRF8001 Bluetooth Low Energy Breakout.
 
-PINOUT
-======
+## PINOUT ##
 
 The pin locations are defined in **ble_system.h**. The following pinout is used by default for the Arduino Uno:
 
@@ -25,15 +23,17 @@ RDY must be on pin 3 since this pin requires a HW interrupt.
 
 ACT is not currently used in any of the existing examples, and can be left unconnected if necessary.
 
-Examples
-========
+# Examples #
 
 The following examples are included for the Adafruit nRF8001 Breakout
 
-UART
-====
+## UART ##
 
-This example simulates a simple UART type bridge between the Arduino and any BLE capable device.  You can send and receive data from your BLE-enabled phone or tablet.  Any data sent to the Arduino will be displayed in the Serial Monitor output, and echo'ed back to the phone or tablet on the mobile device's RX channel.
+This example creates a UART-style bridge between the Arduino and any BLE capable device.
+
+You can send and receive up to 20 bytes at a time between your BLE-enabled phone or tablet and the Arduino.
+
+Any data sent to the Arduino will be displayed in the Serial Monitor output, and echo'ed back to the phone or tablet on the mobile device's RX channel.
 
 This demo creates a custom UART service, with one characteristic for TX and one for RX using the following UUIDs:
 
