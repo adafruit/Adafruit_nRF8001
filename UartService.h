@@ -18,13 +18,21 @@ All text above, and the splash screen must be included in any redistribution
  #include "WProgram.h"
 #endif
 
-class UartService {
- public:
-  UartService ( );
-  bool begin ( void );
-  void pollACI ( void );
+typedef void (*aci_callback)(aci_evt_opcode_t event);
+typedef void (*rx_callback) (uint8_t *buffer, uint8_t len);
 
- private:
-  void uart_tx();
- 
+class UartService 
+{
+ public:
+  UartService  ( aci_callback aciEvent, rx_callback rxEvent );
+  
+  bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
+  void pollACI ( void );
+  void write   ( uint8_t * buffer, uint8_t len );
+
+ private:  
+  aci_callback aci_event;
+  rx_callback  rx_event; 
+  uint16_t     adv_timeout;
+  uint16_t     adv_interval;
 };

@@ -4,21 +4,75 @@
 #include <lib_aci.h>
 #include <aci_setup.h>
 
+#include "uart/aci_evts.h"
 #include "uart/services.h"
 #include "UartService.h"
 
-UartService uart = UartService();
+void aciCallback(aci_evt_opcode_t event);
+void rxCallback(uint8_t *buffer, uint8_t len);
 
+UartService uart = UartService(aciCallback, rxCallback);
+
+/**************************************************************************/
+/*!
+    This function is called whenever select ACI events happen
+*/
+/**************************************************************************/
+void aciCallback(aci_evt_opcode_t event)
+{
+  switch(event)
+  {
+    case ACI_EVT_DEVICE_STARTED:
+      Serial.println(F("Advertising started"));
+      break;
+    case ACI_EVT_CONNECTED:
+      Serial.println(F("Connected!"));
+      break;
+    case ACI_EVT_DISCONNECTED:
+      Serial.println(F("Disconnected or advertising timed out"));
+      break;
+    default:
+      break;
+  }
+}
+
+/**************************************************************************/
+/*!
+    This function is called whenever data arrives on the RX channel
+*/
+/**************************************************************************/
+void rxCallback(uint8_t *buffer, uint8_t len)
+{
+  Serial.print(F("RX: "));
+  for(int i=0; i<len; i++)
+  {
+    Serial.print((char)buffer[i]);
+  }
+  Serial.println(F(""));
+
+  /* Echo the same data back! */  
+  uart.write(buffer, len);
+}
+
+/**************************************************************************/
+/*!
+    Configure the Arduino and start advertising with the radio
+*/
+/**************************************************************************/
 void setup(void)
 { 
   Serial.begin(115200);
   Serial.println(F("Arduino setup"));
-  
+
   uart.begin();
 }
 
+/**************************************************************************/
+/*!
+    Constantly checks for new events on the nRF8001
+*/
+/**************************************************************************/
 void loop()
 {
-  /* Continually check for ACI events */
   uart.pollACI();
 }

@@ -50,24 +50,36 @@ static uint8_t uart_buffer_len = 0;
     Constructor for the UART service    
 */
 /**************************************************************************/
-UartService::UartService(void)
+UartService::UartService(aci_callback aciEvent, rx_callback rxEvent)
 {
+  aci_event = aciEvent;
+  rx_event = rxEvent;
 }
 
 /**************************************************************************/
 /*!
-
+    Transmits data out via the TX characteristic (when available)
 */
 /**************************************************************************/
-void UartService::uart_tx()
+void UartService::write(uint8_t * buffer, uint8_t len)
 {
-  lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, uart_buffer, uart_buffer_len);
-  aci_state.data_credit_available--;
+  /* ToDo: handle packets > 20 bytes in multiple transmits! */
+  if (len > 20)
+  {
+    len = 20;
+  }
+  
+  if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
+  {
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, buffer, len);
+    aci_state.data_credit_available--;
+  }
 }
 
 /**************************************************************************/
 /*!
-
+    Handles low level ACI events, and passes them up to an application
+    level callback when appropriate
 */
 /**************************************************************************/
 void UartService::pollACI()
@@ -87,8 +99,7 @@ void UartService::pollACI()
           switch(aci_evt->params.device_started.device_mode)
           {
             case ACI_DEVICE_SETUP:
-            /* When the device is in the setup mode */
-            Serial.println(F("Evt Device Started: Setup"));
+            /* Device is in setup mode! */
             if (ACI_STATUS_TRANSACTION_COMPLETE != do_aci_setup(&aci_state))
             {
               Serial.println(F("Error in ACI Setup"));
@@ -96,23 +107,22 @@ void UartService::pollACI()
             break;
             
             case ACI_DEVICE_STANDBY:
-              Serial.println(F("Evt Device Started: Standby"));
-              // Looking for an iPhone by sending radio advertisements
-              // When an iPhone connects to us we will get an ACI_EVT_CONNECTED event from the nRF8001
-              lib_aci_connect(180/* in seconds */, 0x0050 /* advertising interval 50ms*/);
-              Serial.println(F("Advertising started"));
+              /* Start advertising ... first value is advertising time in seconds, the */
+              /* second value is the advertising interval in 0.625ms units */
+              lib_aci_connect(adv_timeout, adv_interval);
+              aci_event(ACI_EVT_DEVICE_STARTED);
               break;
           }
         }
-        break; //ACI Device Started Event
+        break;
         
       case ACI_EVT_CMD_RSP:
-        // If an ACI command response event comes with an error -> stop
+        /* If an ACI command response event comes with an error -> stop */
         if (ACI_STATUS_SUCCESS != aci_evt->params.cmd_rsp.cmd_status)
         {
           // ACI ReadDynamicData and ACI WriteDynamicData will have status codes of
           // TRANSACTION_CONTINUE and TRANSACTION_COMPLETE
-          // all other ACI commands will have status code of ACI_STATUS_SCUCCESS for a successful command
+          // all other ACI commands will have status code of ACI_STATUS_SUCCESS for a successful command
           Serial.print(F("ACI Command "));
           Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
           Serial.println(F("Evt Cmd respone: Error. Arduino is in an while(1); loop"));
@@ -127,15 +137,13 @@ void UartService::pollACI()
         break;
         
       case ACI_EVT_CONNECTED:
-        Serial.println(F("Evt Connected"));
         aci_state.data_credit_available = aci_state.data_credit_total;
-        
         /* Get the device version of the nRF8001 and store it in the Hardware Revision String */
         lib_aci_device_version();
+        aci_event(ACI_EVT_CONNECTED);
         break;
         
       case ACI_EVT_PIPE_STATUS:
-        Serial.println(F("Evt Pipe Status"));
         if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX) && (false == timing_change_done))
         {
           lib_aci_change_timing_GAP_PPCP(); // change the timing on the link as specified in the nRFgo studio -> nRF8001 conf. -> GAP. 
@@ -145,33 +153,26 @@ void UartService::pollACI()
         break;
         
       case ACI_EVT_TIMING:
-        Serial.println(F("Evt link connection interval changed"));
+        /* Link connection interval changed */
         break;
         
       case ACI_EVT_DISCONNECTED:
-        Serial.println(F("Evt Disconnected/Advertising timed out"));
-        lib_aci_connect(180/* in seconds */, 0x0100 /* advertising interval 100ms*/);
-        Serial.println(F("Advertising started"));        
+        /* Restart advertising ... first value is advertising time in seconds, the */
+        /* second value is the advertising interval in 0.625ms units */
+        aci_event(ACI_EVT_DISCONNECTED);
+        lib_aci_connect(adv_timeout, adv_interval);
+        aci_event(ACI_EVT_DEVICE_STARTED);
         break;
         
       case ACI_EVT_DATA_RECEIVED:
-        Serial.print(F("UART RX: 0x"));
-        Serial.print(aci_evt->params.data_received.rx_data.pipe_number, HEX);
+        for(int i=0; i<aci_evt->len - 2; i++)
         {
-          Serial.print(F(" Data(Hex) : "));
-          for(int i=0; i<aci_evt->len - 2; i++)
-          {
-            Serial.print(aci_evt->params.data_received.rx_data.aci_data[i], HEX);
-            uart_buffer[i] = aci_evt->params.data_received.rx_data.aci_data[i];
-            Serial.print(F(" "));
-          }
-          uart_buffer_len = aci_evt->len - 2;
+          /* Fill uart_buffer with incoming data */
+          uart_buffer[i] = aci_evt->params.data_received.rx_data.aci_data[i];
         }
-        Serial.println(F(""));
-        if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
-        {
-          uart_tx();
-        }
+        /* Set the buffer len */
+        uart_buffer_len = aci_evt->len - 2;
+        rx_event(uart_buffer, uart_buffer_len);
         break;
    
       case ACI_EVT_DATA_CREDIT:
@@ -179,20 +180,20 @@ void UartService::pollACI()
         break;
       
       case ACI_EVT_PIPE_ERROR:
-        //See the appendix in the nRF8001 Product Specication for details on the error codes
+        /* See the appendix in the nRF8001 Product Specication for details on the error codes */
         Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
         Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
         Serial.print(F("  Pipe Error Code: 0x"));
         Serial.println(aci_evt->params.pipe_error.error_code, HEX);
-                
-        //Increment the credit available as the data packet was not sent
+
+        /* Increment the credit available as the data packet was not sent */
         aci_state.data_credit_available++;
         break;
     }
   }
   else
   {
-    //Serial.println(F("No ACI Events available"));
+    // Serial.println(F("No ACI Events available"));
     // No event in the ACI Event queue and if there is no event in the ACI command queue the arduino can go to sleep
     // Arduino can go to sleep now
     // Wakeup from sleep from the RDYN line
@@ -201,11 +202,20 @@ void UartService::pollACI()
 
 /**************************************************************************/
 /*!
-
+    Configures the nRF8001 and starts advertising the UART Service
+    
+    @param[in]  advTimeout  
+                The advertising timeout in seconds (0 = infinite advertising)
+    @param[in]  advInterval
+                The delay between advertising packets in 0.625ms units
 */
 /**************************************************************************/
-bool UartService::begin(void) 
+bool UartService::begin(uint16_t advTimeout, uint16_t advInterval) 
 {
+  /* Store the advertising timeout and interval */
+  adv_timeout = advTimeout;   /* ToDo: Check range! */
+  adv_interval = advInterval; /* ToDo: Check range! */
+  
   /* Setup the service data from nRFGo Studio (services.h) */
   if (NULL != services_pipe_type_mapping)
   {
