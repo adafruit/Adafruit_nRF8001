@@ -24,7 +24,7 @@ All text above, and the splash screen below must be included in any redistributi
 #include <aci_setup.h>
 #include "uart/services.h"
 
-#include "UartService.h"
+#include "Adafruit_BLE_UART.h"
 
 /* Get the service pipe data created in nRFGo Studio */
 #ifdef SERVICES_PIPE_TYPE_MAPPING_CONTENT
@@ -47,10 +47,10 @@ static uint8_t uart_buffer_len = 0;
 
 /**************************************************************************/
 /*!
-    Constructor for the UART service    
+    Constructor for the UART service
 */
 /**************************************************************************/
-UartService::UartService(aci_callback aciEvent, rx_callback rxEvent)
+Adafruit_BLE_UART::Adafruit_BLE_UART(aci_callback aciEvent, rx_callback rxEvent)
 {
   aci_event = aciEvent;
   rx_event = rxEvent;
@@ -61,7 +61,7 @@ UartService::UartService(aci_callback aciEvent, rx_callback rxEvent)
     Transmits data out via the TX characteristic (when available)
 */
 /**************************************************************************/
-void UartService::write(uint8_t * buffer, uint8_t len)
+void Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
   /* ToDo: handle packets > 20 bytes in multiple transmits! */
   if (len > 20)
@@ -82,7 +82,7 @@ void UartService::write(uint8_t * buffer, uint8_t len)
     level callback when appropriate
 */
 /**************************************************************************/
-void UartService::pollACI()
+void Adafruit_BLE_UART::pollACI()
 {
   // We enter the if statement only when there is a ACI event available to be processed
   if (lib_aci_event_get(&aci_state, &aci_data))
@@ -210,7 +210,7 @@ void UartService::pollACI()
                 The delay between advertising packets in 0.625ms units
 */
 /**************************************************************************/
-bool UartService::begin(uint16_t advTimeout, uint16_t advInterval) 
+bool Adafruit_BLE_UART::begin(uint16_t advTimeout, uint16_t advInterval) 
 {
   /* Store the advertising timeout and interval */
   adv_timeout = advTimeout;   /* ToDo: Check range! */

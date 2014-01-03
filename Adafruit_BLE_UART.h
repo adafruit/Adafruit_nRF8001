@@ -21,10 +21,10 @@ All text above, and the splash screen must be included in any redistribution
 typedef void (*aci_callback)(aci_evt_opcode_t event);
 typedef void (*rx_callback) (uint8_t *buffer, uint8_t len);
 
-class UartService 
+class Adafruit_BLE_UART
 {
  public:
-  UartService  ( aci_callback aciEvent, rx_callback rxEvent );
+  Adafruit_BLE_UART ( aci_callback aciEvent, rx_callback rxEvent );
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );

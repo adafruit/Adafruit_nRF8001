@@ -6,12 +6,12 @@
 
 #include "uart/aci_evts.h"
 #include "uart/services.h"
-#include "UartService.h"
+#include "Adafruit_BLE_UART.h"
 
 void aciCallback(aci_evt_opcode_t event);
 void rxCallback(uint8_t *buffer, uint8_t len);
 
-UartService uart = UartService(aciCallback, rxCallback);
+Adafruit_BLE_UART uart = Adafruit_BLE_UART(aciCallback, rxCallback);
 
 /**************************************************************************/
 /*!
