@@ -1,17 +1,24 @@
-#include "uart.h"
+#include <SPI.h>
+#include <avr/pgmspace.h>
+#include <ble_system.h>
+#include <lib_aci.h>
+#include <aci_setup.h>
 
-uart bleUart = uart();
+#include "uart/services.h"
+#include "UartService.h"
+
+UartService uart = UartService();
 
 void setup(void)
 { 
   Serial.begin(115200);
   Serial.println(F("Arduino setup"));
   
-  bleUart.begin();
+  uart.begin();
 }
 
 void loop()
 {
   /* Continually check for ACI events */
-  bleUart.pollACI();
+  uart.pollACI();
 }
