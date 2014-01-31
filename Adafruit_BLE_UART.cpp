@@ -50,10 +50,11 @@ static uint8_t uart_buffer_len = 0;
     Constructor for the UART service
 */
 /**************************************************************************/
-Adafruit_BLE_UART::Adafruit_BLE_UART(aci_callback aciEvent, rx_callback rxEvent)
+Adafruit_BLE_UART::Adafruit_BLE_UART(aci_callback aciEvent, rx_callback rxEvent, bool debug)
 {
   aci_event = aciEvent;
   rx_event = rxEvent;
+  debugMode = debug;
 }
 
 /**************************************************************************/
@@ -102,7 +103,9 @@ void Adafruit_BLE_UART::pollACI()
             /* Device is in setup mode! */
             if (ACI_STATUS_TRANSACTION_COMPLETE != do_aci_setup(&aci_state))
             {
-              Serial.println(F("Error in ACI Setup"));
+              if (debugMode) {
+                Serial.println(F("Error in ACI Setup"));
+              }
             }
             break;
             
@@ -123,9 +126,11 @@ void Adafruit_BLE_UART::pollACI()
           // ACI ReadDynamicData and ACI WriteDynamicData will have status codes of
           // TRANSACTION_CONTINUE and TRANSACTION_COMPLETE
           // all other ACI commands will have status code of ACI_STATUS_SUCCESS for a successful command
-          Serial.print(F("ACI Command "));
-          Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
-          Serial.println(F("Evt Cmd respone: Error. Arduino is in an while(1); loop"));
+          if (debugMode) {
+            Serial.print(F("ACI Command "));
+            Serial.println(aci_evt->params.cmd_rsp.cmd_opcode, HEX);
+            Serial.println(F("Evt Cmd respone: Error. Arduino is in an while(1); loop"));
+          }
           while (1);
         }
         if (ACI_CMD_GET_DEVICE_VERSION == aci_evt->params.cmd_rsp.cmd_opcode)
@@ -181,10 +186,12 @@ void Adafruit_BLE_UART::pollACI()
       
       case ACI_EVT_PIPE_ERROR:
         /* See the appendix in the nRF8001 Product Specication for details on the error codes */
-        Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
-        Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
-        Serial.print(F("  Pipe Error Code: 0x"));
-        Serial.println(aci_evt->params.pipe_error.error_code, HEX);
+        if (debugMode) {
+          Serial.print(F("ACI Evt Pipe Error: Pipe #:"));
+          Serial.print(aci_evt->params.pipe_error.pipe_number, DEC);
+          Serial.print(F("  Pipe Error Code: 0x"));
+          Serial.println(aci_evt->params.pipe_error.error_code, HEX);
+        }
 
         /* Increment the credit available as the data packet was not sent */
         aci_state.data_credit_available++;

@@ -11,7 +11,7 @@
 void aciCallback(aci_evt_opcode_t event);
 void rxCallback(uint8_t *buffer, uint8_t len);
 
-Adafruit_BLE_UART uart = Adafruit_BLE_UART(aciCallback, rxCallback);
+Adafruit_BLE_UART uart = Adafruit_BLE_UART(aciCallback, rxCallback, true);
 
 /**************************************************************************/
 /*!
