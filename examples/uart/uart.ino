@@ -4,7 +4,7 @@
 #include <lib_aci.h>
 #include <aci_setup.h>
 
-#include "uart/aci_evts.h"
+#include "aci_evts.h"
 #include "uart/services.h"
 #include "Adafruit_BLE_UART.h"
 
