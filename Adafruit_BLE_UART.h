@@ -18,6 +18,8 @@ All text above, and the splash screen must be included in any redistribution
  #include "WProgram.h"
 #endif
 
+#ifndef _ADAFRUIT_BLE_UART_H_
+#define _ADAFRUIT_BLE_UART_H_
 
 extern "C" 
 {
@@ -42,3 +44,5 @@ class Adafruit_BLE_UART
   uint16_t     adv_timeout;
   uint16_t     adv_interval;
 };
+
+#endif
