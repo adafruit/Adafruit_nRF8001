@@ -21,6 +21,8 @@ All text above, and the splash screen must be included in any redistribution
 #ifndef _ADAFRUIT_BLE_UART_H_
 #define _ADAFRUIT_BLE_UART_H_
 
+#include "utility/aci_evts.h"
+
 extern "C" 
 {
   /* Callback prototypes */
@@ -31,18 +33,33 @@ extern "C"
 class Adafruit_BLE_UART
 {
  public:
-  Adafruit_BLE_UART ( aci_callback aciEvent, rx_callback rxEvent, bool debug = false);
+  Adafruit_BLE_UART (int8_t req, int8_t rdy, int8_t rst);
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
   void write   ( uint8_t * buffer, uint8_t len );
   
+  void setACIcallback(aci_callback aciEvent = NULL);
+  void setRXcallback(rx_callback rxEvent = NULL);
+
+  aci_evt_opcode_t getState(void);
+
  private:  
+  void defaultACICallback(aci_evt_opcode_t event);
+  void defaultRX(uint8_t *buffer, uint8_t len);
+
+  // callbacks you can set with setCallback function for user extension
   aci_callback aci_event;
   rx_callback  rx_event; 
+
   bool         debugMode;
   uint16_t     adv_timeout;
   uint16_t     adv_interval;
+
+  aci_evt_opcode_t currentStatus;
+  
+  // pins usd
+  int8_t _REQ, _RDY, _RST;
 };
 
 #endif

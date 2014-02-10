@@ -45,16 +45,59 @@ static bool timing_change_done = false;
 static uint8_t uart_buffer[20];
 static uint8_t uart_buffer_len = 0;
 
+static uint8_t rxbuffer[80];
+static uint8_t *rxbuff_rptr, *rxbuff_wptr;
+
+int8_t HAL_IO_RADIO_RESET, HAL_IO_RADIO_REQN, HAL_IO_RADIO_RDY, HAL_IO_RADIO_IRQ;
+
 /**************************************************************************/
 /*!
     Constructor for the UART service
 */
 /**************************************************************************/
-Adafruit_BLE_UART::Adafruit_BLE_UART(aci_callback aciEvent, rx_callback rxEvent, bool debug)
+// default RX callback!
+
+void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
 {
+  Serial.print(F("RX: "));
+  for(int i=0; i<len; i++)
+  {
+    Serial.print(" 0x"); Serial.print((char)buffer[i], HEX); 
+  }
+  Serial.println(F(""));
+}
+
+void Adafruit_BLE_UART::defaultACICallback(aci_evt_opcode_t event)
+{
+  currentStatus = event;
+}
+
+aci_evt_opcode_t Adafruit_BLE_UART::getState(void) {
+  return currentStatus;
+}
+
+/**************************************************************************/
+/*!
+    Constructor for the UART service
+*/
+/**************************************************************************/
+Adafruit_BLE_UART::Adafruit_BLE_UART(int8_t req, int8_t rdy, int8_t rst)
+{
+  debugMode = true;
+  
+  HAL_IO_RADIO_REQN = req;
+  HAL_IO_RADIO_RDY = rdy;
+  HAL_IO_RADIO_RESET = rst;
+
+  currentStatus = ACI_EVT_DISCONNECTED;
+}
+
+void Adafruit_BLE_UART::setACIcallback(aci_callback aciEvent) {
   aci_event = aciEvent;
+}
+
+void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
   rx_event = rxEvent;
-  debugMode = debug;
 }
 
 /**************************************************************************/
@@ -113,8 +156,9 @@ void Adafruit_BLE_UART::pollACI()
               /* Start advertising ... first value is advertising time in seconds, the */
               /* second value is the advertising interval in 0.625ms units */
               lib_aci_connect(adv_timeout, adv_interval);
-              aci_event(ACI_EVT_DEVICE_STARTED);
-              break;
+              defaultACICallback(ACI_EVT_DEVICE_STARTED);
+	      if (aci_event) 
+		aci_event(ACI_EVT_DEVICE_STARTED);
           }
         }
         break;
@@ -145,8 +189,10 @@ void Adafruit_BLE_UART::pollACI()
         aci_state.data_credit_available = aci_state.data_credit_total;
         /* Get the device version of the nRF8001 and store it in the Hardware Revision String */
         lib_aci_device_version();
-        aci_event(ACI_EVT_CONNECTED);
-        break;
+        
+	defaultACICallback(ACI_EVT_CONNECTED);
+	if (aci_event) 
+	  aci_event(ACI_EVT_CONNECTED);
         
       case ACI_EVT_PIPE_STATUS:
         if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX) && (false == timing_change_done))
@@ -164,10 +210,17 @@ void Adafruit_BLE_UART::pollACI()
       case ACI_EVT_DISCONNECTED:
         /* Restart advertising ... first value is advertising time in seconds, the */
         /* second value is the advertising interval in 0.625ms units */
-        aci_event(ACI_EVT_DISCONNECTED);
-        lib_aci_connect(adv_timeout, adv_interval);
-        aci_event(ACI_EVT_DEVICE_STARTED);
-        break;
+
+	defaultACICallback(ACI_EVT_DISCONNECTED);
+	if (aci_event)
+	  aci_event(ACI_EVT_DISCONNECTED);
+
+	lib_aci_connect(adv_timeout, adv_interval);
+
+	defaultACICallback(ACI_EVT_DEVICE_STARTED);
+	if (aci_event)
+	  aci_event(ACI_EVT_DEVICE_STARTED);
+	break;
         
       case ACI_EVT_DATA_RECEIVED:
         for(int i=0; i<aci_evt->len - 2; i++)
