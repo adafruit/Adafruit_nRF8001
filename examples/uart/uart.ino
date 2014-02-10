@@ -1,17 +1,12 @@
 #include <SPI.h>
-#include <avr/pgmspace.h>
-#include <ble_system.h>
-#include <lib_aci.h>
-#include <aci_setup.h>
-
-#include "aci_evts.h"
-#include "uart/services.h"
 #include "Adafruit_BLE_UART.h"
 
-void aciCallback(aci_evt_opcode_t event);
-void rxCallback(uint8_t *buffer, uint8_t len);
+#define ADAFRUITBLE_REQ 10
+#define ADAFRUITBLE_RST 9
+#define ADAFRUITBLE_RDY 2
 
-Adafruit_BLE_UART uart = Adafruit_BLE_UART(aciCallback, rxCallback, true);
+
+Adafruit_BLE_UART uart = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RDY, ADAFRUITBLE_RST);
 
 /**************************************************************************/
 /*!
@@ -46,7 +41,7 @@ void rxCallback(uint8_t *buffer, uint8_t len)
   Serial.print(F("RX: "));
   for(int i=0; i<len; i++)
   {
-    Serial.print((char)buffer[i]);
+    Serial.print(" 0x"); Serial.print((char)buffer[i], HEX); 
   }
   Serial.println(F(""));
 
@@ -61,9 +56,11 @@ void rxCallback(uint8_t *buffer, uint8_t len)
 /**************************************************************************/
 void setup(void)
 { 
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println(F("Arduino setup"));
 
+  uart.setRXcallback(rxCallback);
+  uart.setACIcallback(aciCallback);
   uart.begin();
 }
 
