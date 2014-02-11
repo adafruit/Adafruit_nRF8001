@@ -92,15 +92,15 @@ void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
 }
 
 
-/* uart stuff */
+/* Stream stuff */
 
-uint16_t Adafruit_BLE_UART::available(void)
+int Adafruit_BLE_UART::available(void)
 {
   return (uint16_t)(ADAFRUIT_BLE_UART_RXBUFFER_SIZE + adafruit_ble_rx_head - adafruit_ble_rx_tail) 
     % ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
 }
 
-uint16_t Adafruit_BLE_UART::read(void)
+int Adafruit_BLE_UART::read(void)
 {
   // if the head isn't ahead of the tail, we don't have any characters
   if (adafruit_ble_rx_head == adafruit_ble_rx_tail) {
@@ -111,6 +111,20 @@ uint16_t Adafruit_BLE_UART::read(void)
     adafruit_ble_rx_tail %= ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
     return c;
   }
+}
+
+int Adafruit_BLE_UART::peek(void)
+{
+  if (adafruit_ble_rx_head ==  adafruit_ble_rx_tail) {
+    return -1;
+  } else {
+    return adafruit_ble_rx_buffer[adafruit_ble_rx_tail];
+  }
+}
+
+void Adafruit_BLE_UART::flush(void)
+{
+  // MEME: KTOWN what do we do here?
 }
 
 
@@ -170,10 +184,17 @@ uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
     len = 20;
   }
   
+  Serial.print(F("Writing out to BTLE:"));
+  for (uint8_t i=0; i<len; i++) {
+    Serial.print(" 0x"); Serial.print(buffer[i], HEX);
+  }
+  Serial.println();
   if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
   {
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, buffer, len);
     aci_state.data_credit_available--;
+
+    delay(20); // required 10ms delay between sends
     return len;
   }
   return 0;
@@ -181,11 +202,13 @@ uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 
 uint16_t Adafruit_BLE_UART::write(uint8_t buffer)
 {
-  
+  Serial.print(F("Writing one byte 0x")); Serial.println(buffer, HEX);
   if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
   {
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer, 1);
     aci_state.data_credit_available--;
+
+    delay(20); // required 10ms delay between sends
     return 1;
   }
   return 0;

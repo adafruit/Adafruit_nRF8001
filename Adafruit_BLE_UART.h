@@ -31,7 +31,7 @@ extern "C"
   typedef void (*rx_callback) (uint8_t *buffer, uint8_t len);
 }
 
-class Adafruit_BLE_UART : Print
+class Adafruit_BLE_UART : public Stream
 {
  public:
   Adafruit_BLE_UART (int8_t req, int8_t rdy, int8_t rst);
@@ -44,8 +44,12 @@ class Adafruit_BLE_UART : Print
   void setACIcallback(aci_callback aciEvent = NULL);
   void setRXcallback(rx_callback rxEvent = NULL);
 
-  uint16_t available(void);
-  uint16_t read(void);
+  // Stream compatibility
+  int available(void);
+  int read(void);
+  int peek(void);
+  void flush(void);
+
   aci_evt_opcode_t getState(void);
 
  private:  
