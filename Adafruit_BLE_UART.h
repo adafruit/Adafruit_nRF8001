@@ -23,6 +23,7 @@ All text above, and the splash screen must be included in any redistribution
 
 #include "utility/aci_evts.h"
 
+
 extern "C" 
 {
   /* Callback prototypes */
@@ -30,18 +31,21 @@ extern "C"
   typedef void (*rx_callback) (uint8_t *buffer, uint8_t len);
 }
 
-class Adafruit_BLE_UART
+class Adafruit_BLE_UART : Print
 {
  public:
   Adafruit_BLE_UART (int8_t req, int8_t rdy, int8_t rst);
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
-  void write   ( uint8_t * buffer, uint8_t len );
+  uint16_t write   ( uint8_t * buffer, uint8_t len );  
+  uint16_t write ( uint8_t buffer);
   
   void setACIcallback(aci_callback aciEvent = NULL);
   void setRXcallback(rx_callback rxEvent = NULL);
 
+  uint16_t available(void);
+  uint16_t read(void);
   aci_evt_opcode_t getState(void);
 
  private:  

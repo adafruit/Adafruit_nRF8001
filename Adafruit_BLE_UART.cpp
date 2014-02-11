@@ -45,8 +45,12 @@ static bool timing_change_done = false;
 static uint8_t uart_buffer[20];
 static uint8_t uart_buffer_len = 0;
 
-static uint8_t rxbuffer[80];
-static uint8_t *rxbuff_rptr, *rxbuff_wptr;
+#define ADAFRUIT_BLE_UART_RXBUFFER_SIZE 80
+
+uint8_t adafruit_ble_rx_buffer[ADAFRUIT_BLE_UART_RXBUFFER_SIZE];
+volatile uint16_t adafruit_ble_rx_head;
+volatile uint16_t adafruit_ble_rx_tail;
+
 
 int8_t HAL_IO_RADIO_RESET, HAL_IO_RADIO_REQN, HAL_IO_RADIO_RDY, HAL_IO_RADIO_IRQ;
 
@@ -59,13 +63,58 @@ int8_t HAL_IO_RADIO_RESET, HAL_IO_RADIO_REQN, HAL_IO_RADIO_RDY, HAL_IO_RADIO_IRQ
 
 void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
 {
-  Serial.print(F("RX: "));
   for(int i=0; i<len; i++)
   {
-    Serial.print(" 0x"); Serial.print((char)buffer[i], HEX); 
+    uint16_t new_head = (uint16_t)(adafruit_ble_rx_head + 1) % ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
+    
+    // if we should be storing the received character into the location
+    // just before the tail (meaning that the head would advance to the
+    // current location of the tail), we're about to overflow the buffer
+    // and so we don't write the character or advance the head.
+    if (new_head != adafruit_ble_rx_tail) {
+      adafruit_ble_rx_buffer[adafruit_ble_rx_head] = buffer[i];
+
+      Serial.print((char)buffer[i]); 
+
+      adafruit_ble_rx_head = new_head;
+    }
   }
-  Serial.println(F(""));
+
+  /*
+  Serial.print("Buffer: ");
+  for(int i=0; i<adafruit_ble_rx_head; i++)
+    {
+      Serial.print(" 0x"); Serial.print((char)adafruit_ble_rx_buffer[i], HEX); 
+    }
+  Serial.println();
+  */
 }
+
+
+/* uart stuff */
+
+uint16_t Adafruit_BLE_UART::available(void)
+{
+  return (uint16_t)(ADAFRUIT_BLE_UART_RXBUFFER_SIZE + adafruit_ble_rx_head - adafruit_ble_rx_tail) 
+    % ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
+}
+
+uint16_t Adafruit_BLE_UART::read(void)
+{
+  // if the head isn't ahead of the tail, we don't have any characters
+  if (adafruit_ble_rx_head == adafruit_ble_rx_tail) {
+    return -1;
+  } else {
+    unsigned char c = adafruit_ble_rx_buffer[adafruit_ble_rx_tail];
+    adafruit_ble_rx_tail ++;
+    adafruit_ble_rx_tail %= ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
+    return c;
+  }
+}
+
+
+
+//// more callbacks
 
 void Adafruit_BLE_UART::defaultACICallback(aci_evt_opcode_t event)
 {
@@ -75,6 +124,8 @@ void Adafruit_BLE_UART::defaultACICallback(aci_evt_opcode_t event)
 aci_evt_opcode_t Adafruit_BLE_UART::getState(void) {
   return currentStatus;
 }
+
+
 
 /**************************************************************************/
 /*!
@@ -88,6 +139,11 @@ Adafruit_BLE_UART::Adafruit_BLE_UART(int8_t req, int8_t rdy, int8_t rst)
   HAL_IO_RADIO_REQN = req;
   HAL_IO_RADIO_RDY = rdy;
   HAL_IO_RADIO_RESET = rst;
+
+  rx_event = NULL;
+  aci_event = NULL;
+
+  adafruit_ble_rx_head = adafruit_ble_rx_tail = 0;
 
   currentStatus = ACI_EVT_DISCONNECTED;
 }
@@ -105,7 +161,7 @@ void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
     Transmits data out via the TX characteristic (when available)
 */
 /**************************************************************************/
-void Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
+uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
   /* ToDo: handle packets > 20 bytes in multiple transmits! */
   if (len > 20)
@@ -117,8 +173,23 @@ void Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
   {
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, buffer, len);
     aci_state.data_credit_available--;
+    return len;
   }
+  return 0;
 }
+
+uint16_t Adafruit_BLE_UART::write(uint8_t buffer)
+{
+  
+  if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
+  {
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer, 1);
+    aci_state.data_credit_available--;
+    return 1;
+  }
+  return 0;
+}
+
 
 /**************************************************************************/
 /*!
@@ -230,7 +301,9 @@ void Adafruit_BLE_UART::pollACI()
         }
         /* Set the buffer len */
         uart_buffer_len = aci_evt->len - 2;
-        rx_event(uart_buffer, uart_buffer_len);
+	defaultRX(uart_buffer, uart_buffer_len);
+        if (rx_event)
+	  rx_event(uart_buffer, uart_buffer_len);
         break;
    
       case ACI_EVT_DATA_CREDIT:
