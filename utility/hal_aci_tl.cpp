@@ -209,7 +209,25 @@ void m_rdy_line_handle(void)
       /* Disable RDY line interrupt.
          Will latch any pending RDY lines, so when enabled it again this
          routine should be taken again */
-      EIMSK &= ~(0x2);
+        
+      /* Lookup the appropriate bit for EIMSK */
+      /* ToDo: This will currently only work with the UNO/ATMega48/88/128/328 */
+      /*       due to EIMSK. Abstract this away to something MCU nuetral! */
+      uint8_t eimsk_bit = 0xFF;
+      for (uint8_t i=0; i<sizeof(dreqinttable); i+=2) {
+        if (HAL_IO_RADIO_RDY == dreqinttable[i]) {
+          eimsk_bit = dreqinttable[i+1];
+        }
+      }
+      if (eimsk_bit != 0xFF) 
+      {
+        EIMSK &= ~(1 << eimsk_bit);
+      }
+      else
+      {
+        /* RDY isn't a valid HW INT pin! */
+        while(1);
+      }         
     }    
   }
 }
@@ -228,8 +246,25 @@ bool hal_aci_tl_event_get(hal_aci_data_t *p_aci_data)
     
     if (was_full)
     {
-      /* Enable RDY line interrupt again */
-      EIMSK |= (0x2);
+      /* Lookup the appropriate bit for EIMSK */
+      /* ToDo: This will currently only work with the UNO/ATMega48/88/128/328 */
+      /*       due to EIMSK. Abstract this away to something MCU nuetral! */
+      uint8_t eimsk_bit = 0xFF;
+      for (uint8_t i=0; i<sizeof(dreqinttable); i+=2) {
+        if (HAL_IO_RADIO_RDY == dreqinttable[i]) {
+          eimsk_bit = dreqinttable[i+1];
+        }
+      }
+      if (eimsk_bit != 0xFF) 
+      {
+        /* Enable RDY line interrupt again */
+        EIMSK |= (1 << eimsk_bit);
+      }
+      else
+      {
+        /* RDY isn't a valid HW INT pin! */
+        while(1);
+      }
     }
     return true;
   }
