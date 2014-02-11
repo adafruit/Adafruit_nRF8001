@@ -4,8 +4,6 @@
 #include <SPI.h>
 #include "Adafruit_BLE_UART.h"
 
-// Use hardware SPI for CLK, MOSI and MISO
-// On uno, CLK = 13, MISO = 12, MOSI = 11
 #define ADAFRUITBLE_REQ 10
 #define ADAFRUITBLE_RDY 2
 #define ADAFRUITBLE_RST 9
@@ -42,12 +40,19 @@ void aciCallback(aci_evt_opcode_t event)
 /**************************************************************************/
 void rxCallback(uint8_t *buffer, uint8_t len)
 {
-  Serial.print(F("RX: "));
+  Serial.print(F("Received "));
+  Serial.print(len);
+  Serial.print(F(" bytes: "));
+  for(int i=0; i<len; i++)
+   Serial.print((char)buffer[i]); 
+
+  Serial.print(F(" ["));
+
   for(int i=0; i<len; i++)
   {
     Serial.print(" 0x"); Serial.print((char)buffer[i], HEX); 
   }
-  Serial.println(F(""));
+  Serial.println(F(" ]"));
 
   /* Echo the same data back! */  
   uart.write(buffer, len);
@@ -61,7 +66,7 @@ void rxCallback(uint8_t *buffer, uint8_t len)
 void setup(void)
 { 
   Serial.begin(9600);
-  Serial.println(F("Arduino setup"));
+  Serial.println(F("Adafruit Bluefruit Low Energy nRF8001 Callback Echo demo"));
 
   uart.setRXcallback(rxCallback);
   uart.setACIcallback(aciCallback);

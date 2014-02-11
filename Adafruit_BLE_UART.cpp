@@ -74,7 +74,8 @@ void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
     if (new_head != adafruit_ble_rx_tail) {
       adafruit_ble_rx_buffer[adafruit_ble_rx_head] = buffer[i];
 
-      Serial.print((char)buffer[i]); 
+      // debug echo print
+      // Serial.print((char)buffer[i]); 
 
       adafruit_ble_rx_head = new_head;
     }
