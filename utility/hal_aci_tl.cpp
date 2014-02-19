@@ -343,7 +343,6 @@ hal_aci_data_t * hal_aci_tl_poll_get(void)
 
   //SPI.begin();  
     
-  pinMode(5, OUTPUT);
   HAL_IO_SET_STATE(HAL_IO_RADIO_REQN, 0);
   
   // Receive from queue
