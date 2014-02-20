@@ -183,12 +183,15 @@ uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
   {
     len = 20;
   }
-  
-  Serial.print(F("Writing out to BTLE:"));
+
+#ifdef BLE_RW_DEBUG
+  Serial.print(F("\tWriting out to BTLE:"));
   for (uint8_t i=0; i<len; i++) {
-    Serial.print(" 0x"); Serial.print(buffer[i], HEX);
+    Serial.print(F(" 0x")); Serial.print(buffer[i], HEX);
   }
   Serial.println();
+#endif
+
   if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
   {
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, buffer, len);
@@ -202,7 +205,9 @@ uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 
 uint16_t Adafruit_BLE_UART::write(uint8_t buffer)
 {
-  Serial.print(F("Writing one byte 0x")); Serial.println(buffer, HEX);
+#ifdef BLE_RW_DEBUG
+  Serial.print(F("\tWriting one byte 0x")); Serial.println(buffer, HEX);
+#endif
   if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
   {
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer, 1);

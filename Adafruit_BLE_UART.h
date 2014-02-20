@@ -23,6 +23,7 @@ All text above, and the splash screen must be included in any redistribution
 
 #include "utility/aci_evts.h"
 
+#define BLE_RW_DEBUG
 
 extern "C" 
 {
