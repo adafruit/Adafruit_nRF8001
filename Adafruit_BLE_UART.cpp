@@ -45,8 +45,8 @@ static bool timing_change_done = false;
 static uint8_t uart_buffer[20];
 static uint8_t uart_buffer_len = 0;
 
-#define ADAFRUIT_BLE_UART_RXBUFFER_SIZE 80
-
+// This is the Uart RX buffer, which we manage internally when data is available!
+#define ADAFRUIT_BLE_UART_RXBUFFER_SIZE 64
 uint8_t adafruit_ble_rx_buffer[ADAFRUIT_BLE_UART_RXBUFFER_SIZE];
 volatile uint16_t adafruit_ble_rx_head;
 volatile uint16_t adafruit_ble_rx_tail;
@@ -176,6 +176,33 @@ void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
     Transmits data out via the TX characteristic (when available)
 */
 /**************************************************************************/
+uint16_t Adafruit_BLE_UART::println(const char * thestr) 
+{
+  uint16_t written;
+
+  uint8_t nl[2] = {'\n', '\r'};
+  written = print(thestr);
+  written += write(nl, 2);
+  return written;
+}
+
+uint16_t Adafruit_BLE_UART::print(const char * thestr)
+{
+  uint16_t written = 0;
+  uint8_t intbuffer[20];
+
+  while (strlen(thestr) > 20) {
+    strncpy((char *)intbuffer, thestr, 20);
+    written += write(intbuffer, 20);
+    thestr += 20;
+  }
+  strncpy((char *)intbuffer, thestr, 20);
+  written += write(intbuffer, strlen(thestr));
+ 
+  return written;
+}
+
+
 uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
   /* ToDo: handle packets > 20 bytes in multiple transmits! */
@@ -213,7 +240,7 @@ uint16_t Adafruit_BLE_UART::write(uint8_t buffer)
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer, 1);
     aci_state.data_credit_available--;
 
-    delay(20); // required 10ms delay between sends
+    delay(50); // required 10ms delay between sends
     return 1;
   }
   return 0;
