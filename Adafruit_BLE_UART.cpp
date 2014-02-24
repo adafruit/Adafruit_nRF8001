@@ -178,11 +178,16 @@ void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
 /**************************************************************************/
 uint16_t Adafruit_BLE_UART::println(const char * thestr) 
 {
-  uint16_t written;
-
-  uint8_t nl[2] = {'\n', '\r'};
-  written = print(thestr);
-  written += write(nl, 2);
+  char buffer[20] = { 0 };
+  size_t len = strlen(thestr);
+  
+  if ((len) > 18) return 0;
+  
+  memcpy(buffer, thestr, len);
+  buffer[len] = '\n';
+  buffer[len+1] = '\r';
+  
+  uint16_t written = print(buffer);
   return written;
 }
 
