@@ -227,6 +227,9 @@ uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
     delay(20); // required 10ms delay between sends
     return len;
   }
+
+  pollACI();
+  
   return 0;
 }
 
@@ -243,6 +246,9 @@ uint16_t Adafruit_BLE_UART::write(uint8_t buffer)
     delay(50); // required 10ms delay between sends
     return 1;
   }
+  
+  pollACI();
+  
   return 0;
 }
 
