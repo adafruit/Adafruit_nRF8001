@@ -1,10 +1,11 @@
 #include <SPI.h>
 #include "Adafruit_BLE_UART.h"
 
+// Connect CLK/MISO/MOSI to hardware SPI
+// e.g. On UNO & compatible: CLK = 13, MISO = 12, MOSI = 11
 #define ADAFRUITBLE_REQ 10
 #define ADAFRUITBLE_RST 9
 #define ADAFRUITBLE_RDY 2
-
 
 Adafruit_BLE_UART uart = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RDY, ADAFRUITBLE_RST);
 
