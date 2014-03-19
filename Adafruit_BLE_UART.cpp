@@ -2,7 +2,7 @@
 This is a library for our nRF8001 Bluetooth Low Energy Breakout
 
   Pick one up today in the adafruit shop!
-  ------> http://www.adafruit.com/
+  ------> http://www.adafruit.com/products/1697
 
 These displays use SPI to communicate, 4 or 5 pins are required to  
 interface

@@ -1,3 +1,17 @@
+/*********************************************************************
+This is an example for our nRF8001 Bluetooth Low Energy Breakout
+
+  Pick one up today in the adafruit shop!
+  ------> http://www.adafruit.com/products/1697
+
+Adafruit invests time and resources providing this open source code, 
+please support Adafruit and open-source hardware by purchasing 
+products from Adafruit!
+
+Written by Kevin Townsend/KTOWN  for Adafruit Industries.  
+MIT license, check LICENSE for more information
+All text above, and the splash screen below must be included in any redistribution
+*********************************************************************/
 
 // This version uses call-backs on the event and RX so there's no data handling in the main loop!
 

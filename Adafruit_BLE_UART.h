@@ -2,7 +2,10 @@
 This is a library for our nRF8001 Bluetooth Low Energy Breakout
 
   Pick one up today in the adafruit shop!
-  ------> http://www.adafruit.com/
+  ------> http://www.adafruit.com/products/1697
+
+These displays use SPI to communicate, 4 or 5 pins are required to  
+interface
 
 Adafruit invests time and resources providing this open source code, 
 please support Adafruit and open-source hardware by purchasing 
@@ -10,8 +13,9 @@ products from Adafruit!
 
 Written by Kevin Townsend/KTOWN  for Adafruit Industries.  
 MIT license, check LICENSE for more information
-All text above, and the splash screen must be included in any redistribution
+All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
+
 #if ARDUINO >= 100
  #include "Arduino.h"
 #else
