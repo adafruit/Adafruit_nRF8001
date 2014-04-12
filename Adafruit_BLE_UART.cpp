@@ -176,7 +176,7 @@ void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
     Transmits data out via the TX characteristic (when available)
 */
 /**************************************************************************/
-uint16_t Adafruit_BLE_UART::println(const char * thestr) 
+size_t Adafruit_BLE_UART::println(const char * thestr)
 {
   char buffer[20] = { 0 };
   size_t len = strlen(thestr);
@@ -187,13 +187,13 @@ uint16_t Adafruit_BLE_UART::println(const char * thestr)
   buffer[len] = '\n';
   buffer[len+1] = '\r';
   
-  uint16_t written = print(buffer);
+  size_t written = print(buffer);
   return written;
 }
 
-uint16_t Adafruit_BLE_UART::print(const char * thestr)
+size_t Adafruit_BLE_UART::print(const char * thestr)
 {
-  uint16_t written = 0;
+  size_t written = 0;
   uint8_t intbuffer[20];
 
   while (strlen(thestr) > 20) {
@@ -208,7 +208,7 @@ uint16_t Adafruit_BLE_UART::print(const char * thestr)
 }
 
 
-uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
+size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
   /* ToDo: handle packets > 20 bytes in multiple transmits! */
   if (len > 20)
@@ -238,7 +238,7 @@ uint16_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
   return 0;
 }
 
-uint16_t Adafruit_BLE_UART::write(uint8_t buffer)
+size_t Adafruit_BLE_UART::write(uint8_t buffer)
 {
 #ifdef BLE_RW_DEBUG
   Serial.print(F("\tWriting one byte 0x")); Serial.println(buffer, HEX);

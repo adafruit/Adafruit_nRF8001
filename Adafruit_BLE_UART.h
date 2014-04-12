@@ -43,10 +43,10 @@ class Adafruit_BLE_UART : public Stream
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
-  uint16_t write   ( uint8_t * buffer, uint8_t len );  
-  uint16_t write ( uint8_t buffer);
-  uint16_t print(const char * thestr);
-  uint16_t println(const char * thestr);
+  size_t write ( uint8_t * buffer, uint8_t len );
+  size_t write ( uint8_t buffer);
+  size_t print(const char * thestr);
+  size_t println(const char * thestr);
 
   void setACIcallback(aci_callback aciEvent = NULL);
   void setRXcallback(rx_callback rxEvent = NULL);
