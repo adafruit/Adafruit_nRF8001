@@ -8,7 +8,7 @@ Adafruit invests time and resources providing this open source code,
 please support Adafruit and open-source hardware by purchasing 
 products from Adafruit!
 
-Written by Kevin Townsend/KTOWN  for Adafruit Industries.  
+Written by Kevin Townsend/KTOWN  for Adafruit Industries.
 MIT license, check LICENSE for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
@@ -68,7 +68,7 @@ void rxCallback(uint8_t *buffer, uint8_t len)
   }
   Serial.println(F(" ]"));
 
-  /* Echo the same data back! */  
+  /* Echo the same data back! */
   uart.write(buffer, len);
 }
 
@@ -80,6 +80,7 @@ void rxCallback(uint8_t *buffer, uint8_t len)
 void setup(void)
 { 
   Serial.begin(9600);
+  while(!Serial); // Leonardo/Micro should wait for serial init
   Serial.println(F("Adafruit Bluefruit Low Energy nRF8001 Callback Echo demo"));
 
   uart.setRXcallback(rxCallback);

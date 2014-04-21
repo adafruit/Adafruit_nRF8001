@@ -8,7 +8,7 @@ Adafruit invests time and resources providing this open source code,
 please support Adafruit and open-source hardware by purchasing 
 products from Adafruit!
 
-Written by Kevin Townsend/KTOWN  for Adafruit Industries.  
+Written by Kevin Townsend/KTOWN  for Adafruit Industries.
 MIT license, check LICENSE for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
@@ -33,6 +33,7 @@ Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RD
 void setup(void)
 { 
   Serial.begin(9600);
+  while(!Serial); // Leonardo/Micro should wait for serial init
   Serial.println(F("Adafruit Bluefruit Low Energy nRF8001 Print echo demo"));
 
   BTLEserial.begin();
@@ -49,7 +50,7 @@ void loop()
 {
   // Tell the nRF8001 to do whatever it should be working on.
   BTLEserial.pollACI();
-  
+
   // Ask what is our current status
   aci_evt_opcode_t status = BTLEserial.getState();
   // If the status changed....
@@ -67,7 +68,7 @@ void loop()
     // OK set the last status change to this one
     laststatus = status;
   }
-  
+
   if (status == ACI_EVT_CONNECTED) {
     // Lets see if there's any data for us!
     if (BTLEserial.available()) {
@@ -78,7 +79,7 @@ void loop()
       char c = BTLEserial.read();
       Serial.print(c);
     }
-    
+
     // Next up, see if we have any data to get from the Serial console
 
     if (Serial.available()) {
@@ -90,9 +91,9 @@ void loop()
       uint8_t sendbuffer[20];
       s.getBytes(sendbuffer, 20);
       char sendbuffersize = min(20, s.length());
-      
+
       Serial.print(F("\n* Sending -> \"")); Serial.print((char *)sendbuffer); Serial.println("\"");
-      
+
       // write the data
       BTLEserial.write(sendbuffer, sendbuffersize);
     }
