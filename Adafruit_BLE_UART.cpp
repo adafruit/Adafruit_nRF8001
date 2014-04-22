@@ -42,9 +42,6 @@ static struct aci_state_t aci_state;            /* ACI state data */
 static hal_aci_evt_t  aci_data;                 /* Command buffer */
 static bool timing_change_done = false;
 
-static uint8_t uart_buffer[20];
-static uint8_t uart_buffer_len = 0;
-
 // This is the Uart RX buffer, which we manage internally when data is available!
 #define ADAFRUIT_BLE_UART_RXBUFFER_SIZE 64
 uint8_t adafruit_ble_rx_buffer[ADAFRUIT_BLE_UART_RXBUFFER_SIZE];
@@ -115,7 +112,7 @@ int Adafruit_BLE_UART::read(void)
 
 int Adafruit_BLE_UART::peek(void)
 {
-  if (adafruit_ble_rx_head ==  adafruit_ble_rx_tail) {
+  if (adafruit_ble_rx_head == adafruit_ble_rx_tail) {
     return -1;
   } else {
     return adafruit_ble_rx_buffer[adafruit_ble_rx_tail];
@@ -178,43 +175,22 @@ void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
 /**************************************************************************/
 size_t Adafruit_BLE_UART::println(const char * thestr)
 {
-  char buffer[20] = { 0 };
-  size_t len = strlen(thestr);
-  
-  if ((len) > 18) return 0;
-  
-  memcpy(buffer, thestr, len);
-  buffer[len] = '\n';
-  buffer[len+1] = '\r';
-  
-  size_t written = print(buffer);
+  uint8_t len     = strlen(thestr),
+          written = len ? write((uint8_t *)thestr, len) : 0;
+  if(written == len) written += write((uint8_t *)"\r\n", 2);
+
   return written;
 }
 
 size_t Adafruit_BLE_UART::print(const char * thestr)
 {
-  size_t written = 0;
-  uint8_t intbuffer[20];
-
-  while (strlen(thestr) > 20) {
-    strncpy((char *)intbuffer, thestr, 20);
-    written += write(intbuffer, 20);
-    thestr += 20;
-  }
-  strncpy((char *)intbuffer, thestr, 20);
-  written += write(intbuffer, strlen(thestr));
- 
-  return written;
+  return write((uint8_t *)thestr, strlen(thestr));
 }
 
 
 size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
-  /* ToDo: handle packets > 20 bytes in multiple transmits! */
-  if (len > 20)
-  {
-    len = 20;
-  }
+  uint8_t bytesThisPass, sent = 0;
 
 #ifdef BLE_RW_DEBUG
   Serial.print(F("\tWriting out to BTLE:"));
@@ -224,18 +200,28 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
   Serial.println();
 #endif
 
-  if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
-  {
-    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, buffer, len);
+  while(len) { // Parcelize into chunks
+    bytesThisPass = len;
+    if(bytesThisPass > ACI_PIPE_TX_DATA_MAX_LEN)
+       bytesThisPass = ACI_PIPE_TX_DATA_MAX_LEN;
+
+    if(!lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
+    {
+      pollACI();
+      break;
+    }
+
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer[sent],
+      bytesThisPass);
     aci_state.data_credit_available--;
 
-    delay(20); // required 10ms delay between sends
-    return len;
+    delay(35); // required delay between sends
+
+    if(!(len -= bytesThisPass)) break;
+    sent += bytesThisPass;
   }
 
-  pollACI();
-  
-  return 0;
+  return sent;
 }
 
 size_t Adafruit_BLE_UART::write(uint8_t buffer)
@@ -248,10 +234,10 @@ size_t Adafruit_BLE_UART::write(uint8_t buffer)
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer, 1);
     aci_state.data_credit_available--;
 
-    delay(50); // required 10ms delay between sends
+    delay(35); // required delay between sends
     return 1;
   }
-  
+
   pollACI();
   
   return 0;
@@ -361,16 +347,9 @@ void Adafruit_BLE_UART::pollACI()
 	break;
         
       case ACI_EVT_DATA_RECEIVED:
-        for(int i=0; i<aci_evt->len - 2; i++)
-        {
-          /* Fill uart_buffer with incoming data */
-          uart_buffer[i] = aci_evt->params.data_received.rx_data.aci_data[i];
-        }
-        /* Set the buffer len */
-        uart_buffer_len = aci_evt->len - 2;
-	defaultRX(uart_buffer, uart_buffer_len);
+	defaultRX(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
         if (rx_event)
-	  rx_event(uart_buffer, uart_buffer_len);
+	  rx_event(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
         break;
    
       case ACI_EVT_DATA_CREDIT:
