@@ -4,7 +4,7 @@ Driver and example code for Adafruit's nRF8001 Bluetooth Low Energy Breakout.
 
 ## PINOUT ##
 
-The pin locations are defined in **ble_system.h**. The following pinout is used by default for the Arduino Uno:
+The pin locations are defined in **ble_system.h**, the supported systems are defined in **hal_aci_tl.cpp**. The following pinout is used by default for the Arduino Uno:
 
 * SCK -> Pin 13
 * MISO -> Pin 12
