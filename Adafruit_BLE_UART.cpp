@@ -36,7 +36,7 @@ All text above, and the splash screen below must be included in any redistributi
 #endif
 
 /* Store the setup for the nRF8001 in the flash of the AVR to save on RAM */
-static hal_aci_data_t setup_msgs[NB_SETUP_MESSAGES] PROGMEM = SETUP_MESSAGES_CONTENT;
+static const hal_aci_data_t setup_msgs[NB_SETUP_MESSAGES] PROGMEM = SETUP_MESSAGES_CONTENT;
 
 static struct aci_state_t aci_state;            /* ACI state data */
 static hal_aci_evt_t  aci_data;                 /* Command buffer */
@@ -405,7 +405,7 @@ bool Adafruit_BLE_UART::begin(uint16_t advTimeout, uint16_t advInterval)
     aci_state.aci_setup_info.services_pipe_type_mapping = NULL;
   }
   aci_state.aci_setup_info.number_of_pipes    = NUMBER_OF_PIPES;
-  aci_state.aci_setup_info.setup_msgs         = setup_msgs;
+  aci_state.aci_setup_info.setup_msgs         = (hal_aci_data_t*)setup_msgs;
   aci_state.aci_setup_info.num_setup_msgs     = NB_SETUP_MESSAGES;
 
   /* Pass the service data into the appropriate struct in the ACI */
