@@ -1,19 +1,23 @@
-/* Copyright (c) 2009 Nordic Semiconductor. All Rights Reserved.
+/* Copyright (c) 2014, Nordic Semiconductor ASA
  *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT. 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRENTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- * $LastChangedRevision: 4808 $
- */ 
-/* Attention! 
-*  To maintain compliance with Nordic Semiconductor ASA’s Bluetooth profile 
-*  qualification listings, this section of source code must not be modified.
-*/
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 /** @file
   @brief Implementation of the ACI library.
@@ -26,34 +30,24 @@
 #include "aci_protocol_defines.h"
 #include "acilib_defs.h"
 #include "acilib_if.h"
-#include "hal/hal_aci_tl.h"
+#include "hal_aci_tl.h"
+#include "aci_queue.h"
 #include "lib_aci.h"
-
-
+#include <SPI.h>
 
 
 #define LIB_ACI_DEFAULT_CREDIT_NUMBER   1
 
+/*
+Global additionally used used in aci_setup 
+*/
+hal_aci_data_t  msg_to_send;
+
 
 static services_pipe_type_mapping_t * p_services_pipe_type_map;
-static uint8_t                        pipe_count;
 static hal_aci_data_t *               p_setup_msgs;
-static uint8_t                        setup_msgs_count;
-                  
 
 
-static hal_aci_data_t  msg_to_send;
-
-static hal_aci_data_t  *p_rcvd_evt;
-
-static uint8_t cur_transaction_cmd;
-static uint8_t memorized_rcvd_cmd_opcode;
-static uint8_t memorized_transaction_cmd_opcode;
-
-static bool is_cmd_response_expected;
-
-static uint16_t cx_rf_interval;  // rf_interval = cx_rf_interval * 1.25 ms Range:0x0006 to 0x0C80
-static uint16_t current_slave_latency;
 
 
 static bool is_request_operation_pending;
@@ -69,7 +63,10 @@ static uint8_t indicate_operation_pipe = 0;
 // including the pipes to be opened. 
 static aci_cmd_params_open_adv_pipe_t aci_cmd_params_open_adv_pipe; 
 
-static uint8_t cur_error_code;
+
+
+extern aci_queue_t    aci_rx_q;
+extern aci_queue_t    aci_tx_q;
 
 bool lib_aci_is_pipe_available(aci_state_t *aci_stat, uint8_t pipe)
 {
@@ -102,10 +99,84 @@ bool lib_aci_is_discovery_finished(aci_state_t *aci_stat)
   return(aci_stat->pipes_open_bitmap[0]&0x01);
 }
 
+void lib_aci_board_init(aci_state_t *aci_stat)
+{
+	hal_aci_evt_t *aci_data = NULL;
+	aci_data = (hal_aci_evt_t *)&msg_to_send;
+					
+	if (REDBEARLAB_SHIELD_V1_1 == aci_stat->aci_pins.board_name)
+	{
+	  /*
+	  The Bluetooth low energy Arduino shield v1.1 requires about 100ms to reset.
+	  This is not required for the nRF2740, nRF2741 modules
+	  */
+	  delay(100);
+  
+	  /*
+	  Send the soft reset command to the nRF8001 to get the nRF8001 to a known state.
+	  */
+	  lib_aci_radio_reset();
+  
+	  while (1)
+	  {
+		/*Wait for the command response of the radio reset command.
+		as the nRF8001 will be in either SETUP or STANDBY after the ACI Reset Radio is processed
+		*/
+
+			
+		if (true == lib_aci_event_get(aci_stat, aci_data))
+		{
+		  aci_evt_t * aci_evt;      
+		  aci_evt = &(aci_data->evt);
+	  
+		  if (ACI_EVT_CMD_RSP == aci_evt->evt_opcode)
+		  {
+				if (ACI_STATUS_ERROR_DEVICE_STATE_INVALID == aci_evt->params.cmd_rsp.cmd_status) //in SETUP
+				{
+					//Inject a Device Started Event Setup to the ACI Event Queue
+					msg_to_send.buffer[0] = 4;    //Length
+					msg_to_send.buffer[1] = 0x81; //Device Started Event
+					msg_to_send.buffer[2] = 0x02; //Setup
+					msg_to_send.buffer[3] = 0;    //Hardware Error -> None
+					msg_to_send.buffer[4] = 2;    //Data Credit Available
+					aci_queue_enqueue(&aci_rx_q, &msg_to_send);
+				}
+				else if (ACI_STATUS_SUCCESS == aci_evt->params.cmd_rsp.cmd_status) //We are now in STANDBY
+				{
+					//Inject a Device Started Event Standby to the ACI Event Queue
+					msg_to_send.buffer[0] = 4;    //Length
+					msg_to_send.buffer[1] = 0x81; //Device Started Event
+					msg_to_send.buffer[2] = 0x03; //Standby
+					msg_to_send.buffer[3] = 0;    //Hardware Error -> None
+					msg_to_send.buffer[4] = 2;    //Data Credit Available
+					aci_queue_enqueue(&aci_rx_q, &msg_to_send);
+				}
+				else if (ACI_STATUS_ERROR_CMD_UNKNOWN == aci_evt->params.cmd_rsp.cmd_status) //We are now in TEST
+				{
+					//Inject a Device Started Event Test to the ACI Event Queue
+					msg_to_send.buffer[0] = 4;    //Length
+					msg_to_send.buffer[1] = 0x81; //Device Started Event
+					msg_to_send.buffer[2] = 0x01; //Test
+					msg_to_send.buffer[3] = 0;    //Hardware Error -> None
+					msg_to_send.buffer[4] = 0;    //Data Credit Available
+					aci_queue_enqueue(&aci_rx_q, &msg_to_send);
+				}
+				
+				//Break out of the while loop
+				break;
+		  }
+		  else
+		  {			
+			//Serial.println(F("Discard any other ACI Events"));
+		  }
+	  
+		}
+	  }		
+	}
+}
 
 
-
-void lib_aci_init(aci_state_t *aci_stat)
+void lib_aci_init(aci_state_t *aci_stat, bool debug)
 {
   uint8_t i;
 
@@ -123,22 +194,24 @@ void lib_aci_init(aci_state_t *aci_stat)
   is_indicate_operation_pending    = false; 
   is_open_remote_pipe_pending      = false;
   is_close_remote_pipe_pending     = false;
-  cur_transaction_cmd              = ACI_CMD_INVALID;
-  memorized_rcvd_cmd_opcode        = ACI_CMD_INVALID;
-  memorized_transaction_cmd_opcode = ACI_CMD_INVALID;
-  cx_rf_interval                   = 0;
-  current_slave_latency            = 0;
+
+
+
+  
+  
   request_operation_pipe           = 0;
   indicate_operation_pipe          = 0;
-  cur_error_code                   = 0;
-  p_rcvd_evt                       = NULL;
+  
+  
   
   p_services_pipe_type_map = aci_stat->aci_setup_info.services_pipe_type_mapping;
-  pipe_count               = aci_stat->aci_setup_info.number_of_pipes;
-  p_setup_msgs             = aci_stat->aci_setup_info.setup_msgs;
-  setup_msgs_count         = aci_stat->aci_setup_info.num_setup_msgs;
   
-  hal_aci_tl_init();
+  p_setup_msgs             = aci_stat->aci_setup_info.setup_msgs;
+  
+  
+  hal_aci_tl_init(&aci_stat->aci_pins, debug);
+  
+  lib_aci_board_init(aci_stat);
 }
 
 
@@ -153,7 +226,7 @@ uint16_t lib_aci_get_cx_interval_ms(aci_state_t *aci_stat)
   uint16_t cx_rf_interval_ms;
   
   cx_rf_interval_ms_32bits  = aci_stat->connection_interval;
-  cx_rf_interval_ms_32bits *= 125;                      // the connection interval is given in multiple of 0.125 milliseconds
+  cx_rf_interval_ms_32bits *= 125;                      // the connection interval is given in multiples of 0.125 milliseconds
   cx_rf_interval_ms         = cx_rf_interval_ms_32bits / 100;
   
   return cx_rf_interval_ms;
@@ -340,7 +413,7 @@ bool lib_aci_send_data(uint8_t pipe, uint8_t *p_value, uint8_t size)
       aci_cmd_params_send_data.tx_data.pipe_number = pipe;
       memcpy(&(aci_cmd_params_send_data.tx_data.aci_data[0]), p_value, size);
       acil_encode_cmd_send_data(&(msg_to_send.buffer[0]), &aci_cmd_params_send_data, size);
-      is_cmd_response_expected = false;
+      
       ret_val = hal_aci_tl_send(&msg_to_send);          
   }
   return ret_val;
@@ -425,10 +498,10 @@ bool lib_aci_close_remote_pipe(aci_state_t *aci_stat, uint8_t pipe)
   bool ret_val = false;
   aci_cmd_params_close_remote_pipe_t aci_cmd_params_close_remote_pipe;
 
-  if((p_services_pipe_type_map[pipe-1].location == ACI_STORE_REMOTE)&&
+  if(!((p_services_pipe_type_map[pipe-1].location == ACI_STORE_REMOTE)&&
         ((p_services_pipe_type_map[pipe-1].pipe_type == ACI_RX)||
          (p_services_pipe_type_map[pipe-1].pipe_type == ACI_RX_ACK_AUTO)||
-         (p_services_pipe_type_map[pipe-1].pipe_type == ACI_RX_ACK)))
+         (p_services_pipe_type_map[pipe-1].pipe_type == ACI_RX_ACK))))
   {
     return false;
   }  
@@ -483,15 +556,22 @@ bool lib_aci_bond_request()
   return hal_aci_tl_send(&msg_to_send);
 }
 
+bool lib_aci_event_peek(hal_aci_evt_t *p_aci_evt_data)
+{
+  return hal_aci_tl_event_peek((hal_aci_data_t *)p_aci_evt_data);
+}
+
 bool lib_aci_event_get(aci_state_t *aci_stat, hal_aci_evt_t *p_aci_evt_data)
 {
-  bool status;
+  bool status = false;
+  
   status = hal_aci_tl_event_get((hal_aci_data_t *)p_aci_evt_data);
   
   /**
-  Update the state of the ACI witn the 
+  Update the state of the ACI with the 
   ACI Events -> Pipe Status, Disconnected, Connected, Bond Status, Pipe Error
   */
+  if (true == status)
   {
     aci_evt_t * aci_evt;
     
@@ -531,12 +611,17 @@ bool lib_aci_event_get(aci_state_t *aci_stat, hal_aci_evt_t *p_aci_evt_data)
                 aci_stat->slave_latency       = aci_evt->params.timing.conn_slave_rf_latency;
                 aci_stat->supervision_timeout = aci_evt->params.timing.conn_rf_timeout;
             break;
-        
-        
+
+        default:
+            /* Need default case to avoid compiler warnings about missing enum
+             * values on some platforms.
+             */
+            break;
+
+			
+			
     }
-    
   }
-  
   return status;
 }
 
@@ -546,7 +631,7 @@ bool lib_aci_send_ack(aci_state_t *aci_stat, const uint8_t pipe)
   bool ret_val = false;
   {
     acil_encode_cmd_send_data_ack(&(msg_to_send.buffer[0]), pipe);
-    is_cmd_response_expected = false;
+    
     ret_val = hal_aci_tl_send(&msg_to_send);
   }
   return ret_val;
@@ -558,7 +643,7 @@ bool lib_aci_send_nack(aci_state_t *aci_stat, const uint8_t pipe, const uint8_t 
   bool ret_val = false;
   
   {
-    is_cmd_response_expected = false;
+    
     acil_encode_cmd_send_data_nack(&(msg_to_send.buffer[0]), pipe, error_code);
     ret_val = hal_aci_tl_send(&msg_to_send);
   }
@@ -635,11 +720,36 @@ bool lib_aci_dtm_command(uint8_t dtm_command_msbyte, uint8_t dtm_command_lsbyte)
 
 void lib_aci_flush(void)
 {
-  m_aci_q_flush();
+  hal_aci_tl_q_flush();
 }
 
 void lib_aci_debug_print(bool enable)
 {
-  hal_aci_debug_print(enable);
+  hal_aci_tl_debug_print(enable);
+
 }
 
+void lib_aci_pin_reset(void)
+{
+    hal_aci_tl_pin_reset();
+}
+
+bool lib_aci_event_queue_empty(void)
+{
+  return hal_aci_tl_rx_q_empty();
+}
+
+bool lib_aci_event_queue_full(void)
+{
+  return hal_aci_tl_rx_q_full();
+}
+
+bool lib_aci_command_queue_empty(void)
+{
+  return hal_aci_tl_tx_q_empty();
+}
+
+bool lib_aci_command_queue_full(void)
+{
+  return hal_aci_tl_tx_q_full();
+}

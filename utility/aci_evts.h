@@ -1,14 +1,22 @@
-/* Copyright (c) 2010 Nordic Semiconductor. All Rights Reserved.
+/* Copyright (c) 2014, Nordic Semiconductor ASA
  *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- * $LastChangedRevision$
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 /**
@@ -23,6 +31,7 @@
 #define ACI_EVTS_H__
 
 #include "aci.h"
+
 /**
  * @enum aci_evt_opcode_t
  * @brief ACI event opcodes
@@ -96,7 +105,9 @@ typedef enum
   */
   ACI_EVT_KEY_REQUEST                 = 0x8F
 
-} aci_evt_opcode_t;
+} _aci_packed_ aci_evt_opcode_t;
+
+ACI_ASSERT_SIZE(aci_evt_opcode_t, 1);
 
 /**
  * @struct aci_evt_params_device_started_t
@@ -104,10 +115,12 @@ typedef enum
  */
 typedef struct
 {
-  uint8_t device_mode; /**< enum aci_device_operation_mode_t -> Mode in which the device is being started */
-  uint8_t hw_error;  /**< enum aci_hw_error_t -> Hardware Error if available for the start */
+  aci_device_operation_mode_t device_mode; /**< Mode in which the device is being started */
+  aci_hw_error_t hw_error;  /**< Hardware Error if available for the start */
   uint8_t credit_available; /**< Flow control credit available for this specific FW build */
-} aci_evt_params_device_started_t;
+} _aci_packed_ aci_evt_params_device_started_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_device_started_t, 3);
 
 /**
  * @struct aci_evt_params_hw_error_t
@@ -117,7 +130,9 @@ typedef struct
 {
   uint16_t line_num;
   uint8_t file_name[20];
-} aci_evt_params_hw_error_t;
+} _aci_packed_ aci_evt_params_hw_error_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_hw_error_t, 22);
 
 /**
  * @struct aci_evt_cmd_rsp_params_dtm_cmd_t
@@ -127,7 +142,7 @@ typedef struct
 {
   uint8_t  evt_msb;
   uint8_t  evt_lsb;
-} aci_evt_cmd_rsp_params_dtm_cmd_t;
+} _aci_packed_ aci_evt_cmd_rsp_params_dtm_cmd_t;
 
 /**
  * @struct aci_evt_cmd_rsp_read_dynamic_data_t
@@ -138,7 +153,7 @@ typedef struct
 {
   uint8_t seq_no;
   uint8_t dynamic_data[1];
-} aci_evt_cmd_rsp_read_dynamic_data_t;
+} _aci_packed_ aci_evt_cmd_rsp_read_dynamic_data_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_device_version_t
@@ -151,7 +166,9 @@ typedef struct
   uint8_t   setup_format;
   uint32_t  setup_id;
   uint8_t   setup_status;
-} aci_evt_cmd_rsp_params_get_device_version_t;
+} _aci_packed_ aci_evt_cmd_rsp_params_get_device_version_t;
+
+ACI_ASSERT_SIZE(aci_evt_cmd_rsp_params_get_device_version_t, 9);
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_device_address_t
@@ -159,9 +176,11 @@ typedef struct
  */
 typedef struct
 {
-  uint8_t bd_addr_own[BTLE_DEVICE_ADDRESS_SIZE];
-  uint8_t bd_addr_type; /**< enum aci_bd_addr_type_t */
-} aci_evt_cmd_rsp_params_get_device_address_t;
+  uint8_t  bd_addr_own[BTLE_DEVICE_ADDRESS_SIZE];
+  aci_bd_addr_type_t bd_addr_type;
+} _aci_packed_ aci_evt_cmd_rsp_params_get_device_address_t;
+
+ACI_ASSERT_SIZE(aci_evt_cmd_rsp_params_get_device_address_t, BTLE_DEVICE_ADDRESS_SIZE + 1);
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_battery_level_t
@@ -170,7 +189,7 @@ typedef struct
 typedef struct
 {
   uint16_t battery_level;
-} aci_evt_cmd_rsp_params_get_battery_level_t;
+} _aci_packed_ aci_evt_cmd_rsp_params_get_battery_level_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_temperature_t
@@ -179,7 +198,7 @@ typedef struct
 typedef struct
 {
   int16_t temperature_value;
-} aci_evt_cmd_rsp_params_get_temperature_t;
+} _aci_packed_ aci_evt_cmd_rsp_params_get_temperature_t;
 
 /**
  * @struct aci_evt_params_cmd_rsp_t
@@ -187,8 +206,8 @@ typedef struct
  */
 typedef struct
 {
-  uint8_t cmd_opcode; /**< enum aci_cmd_opcode_t -> Command opcode for which the event response is being sent */
-  uint8_t cmd_status; /**< enum aci_status_code_t -> Status of the command that was sent. Used in the context of the command. */
+  aci_cmd_opcode_t cmd_opcode; /**< Command opcode for which the event response is being sent */
+  aci_status_code_t cmd_status; /**< Status of the command that was sent. Used in the context of the command. */
   union
   {
     aci_evt_cmd_rsp_params_dtm_cmd_t dtm_cmd;
@@ -199,7 +218,9 @@ typedef struct
     aci_evt_cmd_rsp_params_get_temperature_t    get_temperature;
     uint8_t                                     padding[29];  
   } params;
-} aci_evt_params_cmd_rsp_t;
+} _aci_packed_ aci_evt_params_cmd_rsp_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_cmd_rsp_t, 31);
 
 /**
  * @struct aci_evt_params_connected_t
@@ -212,8 +233,10 @@ typedef struct
   uint16_t conn_rf_interval;  /**< rf_interval = conn_rf_interval * 1.25 ms Range:0x0006 to 0x0C80 */
   uint16_t conn_slave_rf_latency; /**< Number of RF events the slave can skip */
   uint16_t conn_rf_timeout; /**< Timeout as a multiple of 10ms i.e timeout = conn_rf_timeout * 10ms Range: 0x000A to 0x0C80 */
-  uint8_t master_clock_accuracy; /**< enum aci_clock_accuracy_t -> Clock accuracy of Bluetooth master: Enumerated list of values from 500 ppm to 20 ppm */
-} aci_evt_params_connected_t;
+  aci_clock_accuracy_t master_clock_accuracy; /**< Clock accuracy of Bluetooth master: Enumerated list of values from 500 ppm to 20 ppm */
+} _aci_packed_ aci_evt_params_connected_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_connected_t, 14);
 
 /**
  * @struct aci_evt_params_disconnected_t
@@ -221,9 +244,11 @@ typedef struct
  */
 typedef struct
 {
-  uint8_t aci_status; /**< enum aci_status_code_t */
+  aci_status_code_t   aci_status;
   uint8_t btle_status;
-} aci_evt_params_disconnected_t;
+} _aci_packed_ aci_evt_params_disconnected_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_disconnected_t, 2);
 
 /**
  * @struct aci_evt_params_bond_status_t
@@ -231,13 +256,15 @@ typedef struct
  */
 typedef struct
 {
-  uint8_t status_code;
-  uint8_t status_source; /**< enum aci_bond_status_source_t */
+  aci_bond_status_code_t status_code;
+  aci_bond_status_source_t status_source;
   uint8_t secmode1_bitmap;
   uint8_t secmode2_bitmap;
   uint8_t keys_exchanged_slave;
   uint8_t keys_exchanged_master;
-} aci_evt_params_bond_status_t;
+} _aci_packed_ aci_evt_params_bond_status_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_bond_status_t, 6);
 
 /**
  * @struct aci_evt_params_pipe_status_t
@@ -247,7 +274,9 @@ typedef struct
 {
   uint8_t  pipes_open_bitmap[8];
   uint8_t  pipes_closed_bitmap[8];
-} aci_evt_params_pipe_status_t;
+} _aci_packed_ aci_evt_params_pipe_status_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_pipe_status_t, 16);
 
 /**
  * @struct aci_evt_params_timing_t
@@ -258,7 +287,9 @@ typedef struct
   uint16_t conn_rf_interval;  /**< rf_interval = conn_rf_interval * 1.25 ms Range:0x0006 to 0x0C80 */
   uint16_t conn_slave_rf_latency; /**< Number of RF events the slave can skip */
   uint16_t conn_rf_timeout; /**< Timeout as a multiple of 10ms i.e timeout = conn_rf_timeout * 10ms Range: 0x000A to 0x0C80 */
-} aci_evt_params_timing_t;
+} _aci_packed_ aci_evt_params_timing_t;
+
+ACI_ASSERT_SIZE(aci_evt_params_timing_t, 6);
 
 /**
  * @struct aci_evt_params_data_credit_t
@@ -267,7 +298,7 @@ typedef struct
 typedef struct
 {
   uint8_t credit;
-} aci_evt_params_data_credit_t;
+} _aci_packed_ aci_evt_params_data_credit_t;
 
 /**
  * @struct aci_evt_params_data_ack_t
@@ -276,7 +307,7 @@ typedef struct
 typedef struct
 {
   uint8_t pipe_number;
-} aci_evt_params_data_ack_t;
+} _aci_packed_ aci_evt_params_data_ack_t;
 
 /**
  * @struct aci_evt_params_data_received_t
@@ -285,12 +316,12 @@ typedef struct
 typedef struct
 {
   aci_rx_data_t rx_data;
-} aci_evt_params_data_received_t;
+} _aci_packed_ aci_evt_params_data_received_t;
 
 typedef struct
 {
   uint8_t content[1];
-} error_data_t;
+} _aci_packed_ error_data_t;
 
 /**
  * @struct aci_evt_params_pipe_error_t
@@ -304,7 +335,7 @@ typedef struct
   {
     error_data_t  error_data;
   } params;
-} aci_evt_params_pipe_error_t;
+} _aci_packed_ aci_evt_params_pipe_error_t;
 
 /**
  * @struct aci_evt_params_display_passkey_t
@@ -313,7 +344,7 @@ typedef struct
 typedef struct
 {
   uint8_t passkey[6];
-} aci_evt_params_display_passkey_t;
+} _aci_packed_ aci_evt_params_display_passkey_t;
 
 /**
  * @struct aci_evt_params_key_request_t
@@ -321,8 +352,8 @@ typedef struct
  */
 typedef struct
 {
-  uint8_t key_type; /**< enum aci_key_type_t */
-} aci_evt_params_key_request_t;
+  aci_key_type_t key_type;
+} _aci_packed_ aci_evt_params_key_request_t;
 
 /**
  * @struct aci_event_params_echo_t
@@ -331,7 +362,7 @@ typedef struct
 typedef struct
 {
   uint8_t echo_data[ACI_ECHO_DATA_MAX_LEN];
-} aci_evt_params_echo_t;
+} _aci_packed_ aci_evt_params_echo_t;
 
 /**
  * @struct aci_evt_t
@@ -340,7 +371,7 @@ typedef struct
 typedef struct
 {
   uint8_t len;
-  uint8_t evt_opcode; /** enum aci_evt_opcode_t */
+  aci_evt_opcode_t evt_opcode;
   union
   {
     aci_evt_params_device_started_t                     device_started;
@@ -359,6 +390,8 @@ typedef struct
     aci_evt_params_display_passkey_t                    display_passkey;
     aci_evt_params_key_request_t                        key_request;
   } params;
-} aci_evt_t;
+} _aci_packed_ aci_evt_t;
+
+ACI_ASSERT_SIZE(aci_evt_t, 33);
 
 #endif // ACI_EVTS_H__
