@@ -220,7 +220,7 @@ void m_rdy_line_handle(void)
   hal_aci_data_t *p_aci_data;
   
   sleep_disable();
-  detachInterrupt(1);
+  detachInterrupt(HAL_IO_RADIO_IRQ);
   
   // Receive or transmit data
   p_aci_data = hal_aci_tl_poll_get();
