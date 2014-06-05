@@ -10,14 +10,14 @@ The pin locations are defined in **ble_system.h**, the supported systems are def
 * MISO -> Pin 12
 * MOSI -> Pin 11
 * REQ -> Pin 10
-* RDY -> Pin 3 (HW interrupt)
-* ACT -> Pin 8 (optional)
+* RDY -> Pin 2 (HW interrupt)
+* ACT -> Not connected
 * RST -> Pin 9
 * 3V0 - > Not connected
 * GND -> GND
 * VIN -> 5V
 
-RDY must be on pin 3 since this pin requires a HW interrupt.
+RDY must be on pin 2 since this pin requires a HW interrupt.
 
 3V0 is an optional pin that exposes the output of the on-board 3.3V regulator. You can use this to supply 3.3V to other peripherals, but normally it will be left unconnected.
 
