@@ -187,6 +187,36 @@ size_t Adafruit_BLE_UART::print(const char * thestr)
   return write((uint8_t *)thestr, strlen(thestr));
 }
 
+size_t Adafruit_BLE_UART::print(String thestr)
+{
+  char message[20];
+  thestr.toCharArray(message, 20);
+  return write((uint8_t *)message, strlen(message));
+  free(message);
+}
+
+size_t Adafruit_BLE_UART::print(uint8_t theint)
+{
+  char message[20];
+  itoa(theint, message, 10);
+  return write((uint8_t *)message, strlen(message));
+  free(message);
+}
+
+size_t Adafruit_BLE_UART::print(const __FlashStringHelper *ifsh)
+{
+  char message[20];
+  const char PROGMEM *p = (const char PROGMEM *)ifsh;
+  int i = 0;
+  while (1) {
+    unsigned char c = pgm_read_byte(p++);
+    message[i] = c;
+    i++;
+    if (c == 0) break;
+  }
+  return write((uint8_t *)message, strlen(message));
+  free(message);  
+}
 
 size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
