@@ -30,6 +30,10 @@ All text above, and the splash screen below must be included in any redistributi
 
 #include "Adafruit_BLE_UART.h"
 
+#if defined __AVR__
+#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
+#endif
+
 /* Get the service pipe data created in nRFGo Studio */
 #ifdef SERVICES_PIPE_TYPE_MAPPING_CONTENT
     static services_pipe_type_mapping_t
@@ -225,7 +229,7 @@ size_t Adafruit_BLE_UART::print(const __FlashStringHelper *ifsh)
 {
   // Copy bytes from flash string into RAM, then send them a buffer at a time.
   char buffer[PRINT_BUFFER_SIZE] = {0};
-  const char PROGMEM *p = (const char PROGMEM *)ifsh;
+  const char *p = (const char *)ifsh;
   size_t written = 0;
   int i = 0;
   unsigned char c = pgm_read_byte(p++);
