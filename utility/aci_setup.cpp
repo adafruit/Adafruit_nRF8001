@@ -1,24 +1,28 @@
-/* Copyright (c) 2009 Nordic Semiconductor. All Rights Reserved.
+/* Copyright (c) 2014, Nordic Semiconductor ASA
  *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- * $LastChangedRevision$
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
- 
-/**
- * My project template
- */
- 
-#include <avr/pgmspace.h>
-#include <ble_system.h>
+
 #include <lib_aci.h>
 #include "aci_setup.h"
+#include <string.h>
+#include <avr/pgmspace.h>
 
 
 // aci_struct that will contain 
@@ -32,100 +36,142 @@
 // Current connection interval, slave latency and link supervision timeout
 // Current State of the the GATT client (Service Discovery status)
 
-static hal_aci_evt_t  aci_data;
-static hal_aci_data_t aci_cmd;
 
-aci_status_code_t aci_setup(aci_state_t *aci_stat, uint8_t num_cmds, uint8_t num_cmd_offset)
+extern hal_aci_data_t msg_to_send;
+
+
+
+/**************************************************************************                */
+/* Utility function to fill the the ACI command queue                                      */
+/* aci_stat               Pointer to the ACI state                                         */
+/* num_cmd_offset(in/out) Offset in the Setup message array to start from                  */
+/*                        offset is updated to the new index after the queue is filled     */
+/*                        or the last message us placed in the queue                       */
+/* Returns                true if at least one message was transferred                     */
+/***************************************************************************/
+static bool aci_setup_fill(aci_state_t *aci_stat, uint8_t *num_cmd_offset)
 {
-  uint8_t i = 0;
-  uint8_t evt_count = 0;
-  aci_evt_t * aci_evt = NULL;
+  bool ret_val = false;
   
-  while (i < num_cmds)
+  while (*num_cmd_offset < aci_stat->aci_setup_info.num_setup_msgs)
   {
-    //Copy the setup ACI message from Flash to RAM
-    //Add 2 bytes to the length byte for status byte, length for the total number of bytes
-    memcpy_P(&aci_cmd, &(aci_stat->aci_setup_info.setup_msgs[num_cmd_offset+i]), 
-              pgm_read_byte_near(&(aci_stat->aci_setup_info.setup_msgs[num_cmd_offset+i].buffer[0]))+2); 
-    
+	//Board dependent defines
+	#if defined (__AVR__)
+		//For Arduino copy the setup ACI message from Flash to RAM.
+		memcpy_P(&msg_to_send, &(aci_stat->aci_setup_info.setup_msgs[*num_cmd_offset]), 
+				  pgm_read_byte_near(&(aci_stat->aci_setup_info.setup_msgs[*num_cmd_offset].buffer[0]))+2); 
+	#elif defined(__PIC32MX__)
+		//In ChipKit we store the setup messages in RAM
+		//Add 2 bytes to the length byte for status byte, length for the total number of bytes
+		memcpy(&msg_to_send, &(aci_stat->aci_setup_info.setup_msgs[*num_cmd_offset]), 
+				  (aci_stat->aci_setup_info.setup_msgs[*num_cmd_offset].buffer[0]+2)); 
+  #elif defined (__arm__)
+    //For Arduino copy the setup ACI message from Flash to RAM.
+    memcpy_P(&msg_to_send, &(aci_stat->aci_setup_info.setup_msgs[*num_cmd_offset]), 
+          pgm_read_byte_near(&(aci_stat->aci_setup_info.setup_msgs[*num_cmd_offset].buffer[0]))+2); 
+	#endif
+
     //Put the Setup ACI message in the command queue
-    if (!hal_aci_tl_send(&aci_cmd))
+    if (!hal_aci_tl_send(&msg_to_send))
     {
-      Serial.println(F("Cmd Queue Full"));
-      return ACI_STATUS_ERROR_INTERNAL;
+      //ACI Command Queue is full
+      // *num_cmd_offset is now pointing to the index of the Setup command that did not get sent
+      return ret_val;
     }
-    else
+   
+    ret_val = true;
+    
+    (*num_cmd_offset)++;
+  }
+  
+  return ret_val;
+}
+
+uint8_t do_aci_setup(aci_state_t *aci_stat)
+{
+  uint8_t setup_offset         = 0;
+  uint32_t i                   = 0x0000;
+  aci_evt_t * aci_evt          = NULL;
+  aci_status_code_t cmd_status = ACI_STATUS_ERROR_CRC_MISMATCH;
+  
+  /*
+  We are using the same buffer since we are copying the contents of the buffer 
+  when queuing and immediately processing the buffer when receiving
+  */
+  hal_aci_evt_t  *aci_data = (hal_aci_evt_t *)&msg_to_send;
+  
+  /* Messages in the outgoing queue must be handled before the Setup routine can run.
+   * If it is non-empty we return. The user should then process the messages before calling
+   * do_aci_setup() again.
+   */
+  if (!lib_aci_command_queue_empty())
+  {
+    return SETUP_FAIL_COMMAND_QUEUE_NOT_EMPTY;
+  }
+  
+  /* If there are events pending from the device that are not relevant to setup, we return false
+   * so that the user can handle them. At this point we don't care what the event is,
+   * as any event is an error.
+   */
+  if (lib_aci_event_peek(aci_data))
+  {
+    return SETUP_FAIL_EVENT_QUEUE_NOT_EMPTY;
+  }
+  
+  /* Fill the ACI command queue with as many Setup messages as it will hold. */
+  aci_setup_fill(aci_stat, &setup_offset);
+  
+  while (cmd_status != ACI_STATUS_TRANSACTION_COMPLETE)
+  {
+    /* This counter is used to ensure that this function does not loop forever. When the device
+     * returns a valid response, we reset the counter.
+     */
+    if (i++ > 0xFFFFE)
     {
-        //Debug messages:
-        //Serial.print(F("Setup msg"));
-        //Serial.println(i, DEC);
+      return SETUP_FAIL_TIMEOUT;	
     }
     
-    i++;
-  }
-  while (1)
-  {
-    //We will sit here if we do not get the same number of command response evts as the commands sent to the ACI
-    //
-    //@check The setup wil fail in the while(1) below when the 32KHz source for the nRF8001 is in-correct in the setup generated in the nRFgo studio
-    if (true == lib_aci_event_get(aci_stat, &aci_data))
+    if (lib_aci_event_peek(aci_data))
     {
-      aci_evt = &aci_data.evt;
+      aci_evt = &(aci_data->evt);
       
-      evt_count++;
-  
-      if (ACI_EVT_CMD_RSP != aci_evt->evt_opcode )
+      if (ACI_EVT_CMD_RSP != aci_evt->evt_opcode)
       {
-        //Got something other than a command response evt -> Error
-        return ACI_STATUS_ERROR_INTERNAL;
+        //Receiving something other than a Command Response Event is an error.
+        return SETUP_FAIL_NOT_COMMAND_RESPONSE;
       }
       
-      if (!((ACI_STATUS_TRANSACTION_CONTINUE == aci_evt->params.cmd_rsp.cmd_status) || 
-           (ACI_STATUS_TRANSACTION_COMPLETE == aci_evt->params.cmd_rsp.cmd_status)))
+      cmd_status = (aci_status_code_t) aci_evt->params.cmd_rsp.cmd_status;
+      switch (cmd_status)
       {
-        return (aci_status_code_t )aci_evt->params.cmd_rsp.cmd_status;
-      }
-      else
-      {
-        //Serial.print(F("Cmd Response Evt "));
-        //Serial.println(evt_count);
+        case ACI_STATUS_TRANSACTION_CONTINUE:
+          //As the device is responding, reset guard counter
+          i = 0;
+          
+          /* As the device has processed the Setup messages we put in the command queue earlier,
+           * we can proceed to fill the queue with new messages
+           */
+          aci_setup_fill(aci_stat, &setup_offset);
+          break;
+        
+        case ACI_STATUS_TRANSACTION_COMPLETE:
+          //Break out of the while loop when this status code appears
+          break;
+        
+        default:
+          //An event with any other status code should be handled by the application
+          return SETUP_FAIL_NOT_SETUP_EVENT;
       }
       
-      if (num_cmds == evt_count)
-      {
-        break;
-      }                  
+      /* If we haven't returned at this point, the event was either ACI_STATUS_TRANSACTION_CONTINUE
+       * or ACI_STATUS_TRANSACTION_COMPLETE. We don't need the event itself, so we simply
+       * remove it from the queue.
+       */
+       lib_aci_event_get (aci_stat, aci_data);
     }
   }
   
-  return ((aci_status_code_t)aci_evt->params.cmd_rsp.cmd_status);              
+  return SETUP_SUCCESS;
 }
-
-
-aci_status_code_t do_aci_setup(aci_state_t *aci_stat)
-{
-  aci_status_code_t status = ACI_STATUS_ERROR_CRC_MISMATCH;
-  uint8_t i=0;
-
-  if(ACI_QUEUE_SIZE >= aci_stat->aci_setup_info.num_setup_msgs)
-  {
-    status = aci_setup(aci_stat, aci_stat->aci_setup_info.num_setup_msgs, 0);
-  }
-  else
-  {
-    for(i=0; i<(aci_stat->aci_setup_info.num_setup_msgs/ACI_QUEUE_SIZE); i++)
-    {
-      //Serial.print(ACI_QUEUE_SIZE, DEC);
-      //Serial.print(F(" "));
-      //Serial.println(0+(ACI_QUEUE_SIZE*i), DEC);
-      status = aci_setup(aci_stat, ACI_QUEUE_SIZE, (ACI_QUEUE_SIZE*i));
-    }
-    if ((aci_stat->aci_setup_info.num_setup_msgs % ACI_QUEUE_SIZE) != 0)
-    {
-     status = aci_setup(aci_stat, aci_stat->aci_setup_info.num_setup_msgs % ACI_QUEUE_SIZE, (ACI_QUEUE_SIZE*i));               
-    }
-  }
-
-  return status;
-}
+  
 
