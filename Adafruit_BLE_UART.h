@@ -49,7 +49,7 @@ class Adafruit_BLE_UART : public Stream
   size_t println(const char * thestr);
   size_t print(const char * thestr);
   size_t print(String thestr);
-  size_t print(uint8_t theint);
+  size_t print(int theint);
   size_t print(const __FlashStringHelper *ifsh);
 
   void setACIcallback(aci_callback aciEvent = NULL);
