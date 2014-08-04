@@ -35,6 +35,9 @@ All text above, and the splash screen below must be included in any redistributi
     static services_pipe_type_mapping_t * services_pipe_type_mapping = NULL;
 #endif
 
+/* Length of the buffer used to store flash strings temporarily when printing. */
+#define PRINT_BUFFER_SIZE 20
+
 /* Store the setup for the nRF8001 in the flash of the AVR to save on RAM */
 static const hal_aci_data_t setup_msgs[NB_SETUP_MESSAGES] PROGMEM = SETUP_MESSAGES_CONTENT;
 
@@ -187,6 +190,45 @@ size_t Adafruit_BLE_UART::print(const char * thestr)
   return write((uint8_t *)thestr, strlen(thestr));
 }
 
+size_t Adafruit_BLE_UART::print(String thestr)
+{
+  return write((uint8_t *)thestr.c_str(), thestr.length());
+}
+
+size_t Adafruit_BLE_UART::print(int theint)
+{
+  char message[4*sizeof(int)+1] = {0};
+  itoa(theint, message, 10);
+  return write((uint8_t *)message, strlen(message));
+}
+
+size_t Adafruit_BLE_UART::print(const __FlashStringHelper *ifsh)
+{
+  // Copy bytes from flash string into RAM, then send them a buffer at a time.
+  char buffer[PRINT_BUFFER_SIZE] = {0};
+  const char PROGMEM *p = (const char PROGMEM *)ifsh;
+  size_t written = 0;
+  int i = 0;
+  unsigned char c = pgm_read_byte(p++);
+  // Read data from flash until a null terminator is found.
+  while (c != 0) {
+    // Copy data to RAM and increase buffer index.
+    buffer[i] = c;
+    i++;
+    if (i >= PRINT_BUFFER_SIZE) {
+      // Send buffer when it's full and reset buffer index.
+      written += write((uint8_t *)buffer, PRINT_BUFFER_SIZE);
+      i = 0;
+    }
+    // Grab a new byte from flash.
+    c = pgm_read_byte(p++);
+  }
+  if (i > 0) {
+    // Send any remaining data in the buffer.
+    written += write((uint8_t *)buffer, i);
+  }
+  return written;
+}
 
 size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {

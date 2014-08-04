@@ -45,8 +45,12 @@ class Adafruit_BLE_UART : public Stream
   void pollACI ( void );
   size_t write ( uint8_t * buffer, uint8_t len );
   size_t write ( uint8_t buffer);
-  size_t print(const char * thestr);
+
   size_t println(const char * thestr);
+  size_t print(const char * thestr);
+  size_t print(String thestr);
+  size_t print(int theint);
+  size_t print(const __FlashStringHelper *ifsh);
 
   void setACIcallback(aci_callback aciEvent = NULL);
   void setRXcallback(rx_callback rxEvent = NULL);
