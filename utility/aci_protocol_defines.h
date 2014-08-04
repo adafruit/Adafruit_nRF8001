@@ -1,18 +1,28 @@
-/* Copyright (c) 2009 Nordic Semiconductor. All Rights Reserved.            *
- *                                                                          *
- * The information contained herein is property of Nordic Semiconductor ASA.*
- * Terms and conditions of usage are described in detail in NORDIC          *
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.                       *
- *                                                                          *
- * Licensees are granted free, non-transferable use of the information. NO  *
- * WARRANTY of ANY KIND is provided. This heading must NOT be removed from  *
- * the file.                                                                *
- *                                                                          */
+/* Copyright (c) 2014, Nordic Semiconductor ASA
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-/*                                                                          *
- * This file contents defines for the position of all the fields of ACI     *
- * command or event messages                                                *
- *                                                                          */
+/*
+ * This file contents defines for the position of all the fields of ACI
+ * command or event messages
+ */
 
 #ifndef ACI_OFFSET_H__
 #define ACI_OFFSET_H__
@@ -56,8 +66,8 @@
 	#define OFFSET_ACI_CMD_PARAMS_SEND_DATA_NACK_T_PIPE_NUMBER 0
 	#define OFFSET_ACI_CMD_PARAMS_SEND_DATA_NACK_T_ERROR_CODE 1
 	#define OFFSET_ACI_CMD_PARAMS_SET_APP_LATENCY_T_MODE 0
-	#define OFFSET_ACI_CMD_PARAMS_SET_APP_LATENCY_T_LATENCY_LSB 0
-	#define OFFSET_ACI_CMD_PARAMS_SET_APP_LATENCY_T_LATENCY_MSB 1
+	#define OFFSET_ACI_CMD_PARAMS_SET_APP_LATENCY_T_LATENCY_LSB 1
+	#define OFFSET_ACI_CMD_PARAMS_SET_APP_LATENCY_T_LATENCY_MSB 2
 	#define OFFSET_ACI_CMD_PARAMS_SET_KEY_T_KEY_TYPE 0
 	#define OFFSET_ACI_CMD_PARAMS_SET_KEY_T_PASSKEY 1
 	#define OFFSET_ACI_CMD_PARAMS_SET_KEY_T_OOB_KEY 1

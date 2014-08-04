@@ -1,19 +1,23 @@
-/* Copyright (c) 2009 Nordic Semiconductor. All Rights Reserved.
+/* Copyright (c) 2014, Nordic Semiconductor ASA
  *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRENTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- * $LastChangedRevision$
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
-/* Attention! 
-*  To maintain compliance with Nordic Semiconductor ASA’s Bluetooth profile 
-*  qualification listings, this section of source code must not be modified.
-*/
 
 #ifndef LIB_ACI_H__
 #define LIB_ACI_H__
@@ -27,14 +31,12 @@
 @brief Library for the logical part of the Application Controller Interface (ACI)
 */
 
-
 #include "hal_platform.h"
-#include "hal/hal_aci_tl.h"
+#include "hal_aci_tl.h"
+#include "aci_queue.h"
 #include "aci.h"
 #include "aci_cmds.h"
 #include "aci_evts.h"
-
-
 
 
 #define EVT_CMD_RESPONSE_MIN_LENGTH              3
@@ -42,10 +44,12 @@
 #define PIPES_ARRAY_SIZE                ((ACI_DEVICE_MAX_PIPES + 7)/8)
 
 /* Same size as a hal_aci_data_t */
-typedef struct hal_aci_evt_t{
+typedef struct {
   uint8_t   debug_byte;
   aci_evt_t evt;
-} hal_aci_evt_t;
+} _aci_packed_ hal_aci_evt_t;
+
+ACI_ASSERT_SIZE(hal_aci_evt_t, 34);
 
 typedef struct
 {
@@ -61,6 +65,8 @@ typedef struct aci_setup_info_t
   uint8_t                       num_setup_msgs;
 } aci_setup_info_t;
 
+
+
 // aci_struct that will contain 
 // total initial credits
 // current credit
@@ -74,10 +80,13 @@ typedef struct aci_setup_info_t
 // Relationship of bond to peer address
 typedef struct aci_state_t
 {
+  aci_pins_t                    aci_pins;                               /* Pins on the MCU used to connect to the nRF8001 */ 
   aci_setup_info_t              aci_setup_info;                         /* Data structures that are created from nRFgo Studio */
   uint8_t                       bonded;                                 /* ( aci_bond_status_code_t ) Is the nRF8001 bonded to a peer device */
   uint8_t                       data_credit_total;                      /* Total data credit available for the specific version of the nRF8001, total equals available when a link is established */
   aci_device_operation_mode_t   device_state;                           /* Operating mode of the nRF8001 */
+  
+  /* */
   
   /* Start : Variables that are valid only when in a connection */
   uint8_t                       data_credit_available;                  /* Available data credits at a specific point of time, ACI_EVT_DATA_CREDIT updates the available credits */
@@ -112,11 +121,19 @@ typedef struct aci_state_t
  */
 void lib_aci_debug_print(bool enable);
 
-/** @brief Initialization function.
- *  @details This function shall be used to initialize/reset ACI Library and also Resets the nRF8001 by togging the reset pin of the nRF8001. This function will reset 
- *           all the variables locally used by ACI library to their respective default values.
+/** @brief Function to pin reset the nRF8001
+ *  @details Pin resets the nRF8001 also handles differences between development boards
  */
-void lib_aci_init(aci_state_t *aci_stat);
+void lib_aci_pin_reset(void);
+
+/** @brief Initialization function.
+ *  @details This function shall be used to initialize/reset ACI Library and also Resets the 
+ *           nRF8001 by togging the reset pin of the nRF8001. This function will reset 
+ *           all the variables locally used by ACI library to their respective default values.
+ *  @param bool True if the data was successfully queued for sending, 
+ *  false if there is no more space to store messages to send.
+ */
+void lib_aci_init(aci_state_t *aci_stat, bool debug);
 
 
 /** @brief Gets the number of currently available ACI credits.
@@ -495,10 +512,43 @@ bool lib_aci_dtm_command(uint8_t dtm_command_msbyte, uint8_t dtm_command_lsbyte)
 */
 bool lib_aci_event_get(aci_state_t *aci_stat, hal_aci_evt_t * aci_evt);
 
+/** @brief Peeks an ACI event from the ACI Event Queue
+ * @details This function peeks at the top event in the ACI event queue.
+ * In polling mode, this function will query the nRF8001 for pending events, but unlike
+ * lib_aci_event_get() it will not dequeue the event from the local queue, but will instead
+ * only peek at it.
+ * @return True if an ACI Event was copied to the pointer.
+*/
+bool lib_aci_event_peek(hal_aci_evt_t *p_aci_evt_data);
+
 /** @brief Flushes the events in the ACI command queues and ACI Event queue
  *
 */
 void lib_aci_flush(void);
+
+/** @brief Return full status of the Event queue
+ *  @details
+ *
+ */
+ bool lib_aci_event_queue_full(void);
+ 
+ /** @brief Return empty status of the Event queue
+ *  @details
+ *
+ */
+ bool lib_aci_event_queue_empty(void);
+
+/** @brief Return full status of Command queue
+ *  @details
+ *
+ */
+ bool lib_aci_command_queue_full(void);
+ 
+ /** @brief Return empty status of Command queue
+ *  @details
+ *
+ */
+ bool lib_aci_command_queue_empty(void);
 
 //@}
 
