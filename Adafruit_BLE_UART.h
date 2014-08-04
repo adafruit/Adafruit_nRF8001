@@ -47,7 +47,7 @@ extern "C"
 class Adafruit_BLE_UART : public Stream
 {
  public:
-  Adafruit_BLE_UART (int8_t req, int8_t rdy, int8_t rst);
+  Adafruit_BLE_UART (int8_t req, int8_t rdy, int8_t rst, bool debug = false);
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
