@@ -85,6 +85,7 @@ void setup(void)
 
   uart.setRXcallback(rxCallback);
   uart.setACIcallback(aciCallback);
+  // uart.setDeviceName("NEWNAME"); /* 7 characters max! */
   uart.begin();
 }
 

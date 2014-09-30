@@ -157,6 +157,8 @@ Adafruit_BLE_UART::Adafruit_BLE_UART(int8_t req, int8_t rdy, int8_t rst)
 
   rx_event = NULL;
   aci_event = NULL;
+  
+  memset(device_name, 0x00, 8);
 
   adafruit_ble_rx_head = adafruit_ble_rx_tail = 0;
 
@@ -285,6 +287,23 @@ size_t Adafruit_BLE_UART::write(uint8_t buffer)
   return 0;
 }
 
+/**************************************************************************/
+/*!
+    Update the device name (7 characters or less!)
+*/
+/**************************************************************************/
+void Adafruit_BLE_UART::setDeviceName(const char * deviceName)
+{
+  if (strlen(deviceName) > 7)
+  {
+    /* String too long! */
+    return;
+  }
+  else
+  {
+    memcpy(device_name, deviceName, strlen(deviceName));
+  }
+}
 
 /**************************************************************************/
 /*!
@@ -321,6 +340,11 @@ void Adafruit_BLE_UART::pollACI()
             case ACI_DEVICE_STANDBY:
               /* Start advertising ... first value is advertising time in seconds, the */
               /* second value is the advertising interval in 0.625ms units */
+              if (device_name[0] != 0x00)
+              {
+                /* Update the device name */
+                lib_aci_set_local_data(&aci_state, PIPE_GAP_DEVICE_NAME_SET , (uint8_t *)&device_name, strlen(device_name));
+              }
               lib_aci_connect(adv_timeout, adv_interval);
               defaultACICallback(ACI_EVT_DEVICE_STARTED);
 	      if (aci_event) 

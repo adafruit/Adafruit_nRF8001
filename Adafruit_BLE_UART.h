@@ -54,6 +54,7 @@ class Adafruit_BLE_UART : public Stream
 
   void setACIcallback(aci_callback aciEvent = NULL);
   void setRXcallback(rx_callback rxEvent = NULL);
+  void setDeviceName(const char * deviceName);
 
   // Stream compatibility
   int available(void);
@@ -74,6 +75,7 @@ class Adafruit_BLE_UART : public Stream
   bool         debugMode;
   uint16_t     adv_timeout;
   uint16_t     adv_interval;
+  char         device_name[8];
 
   aci_evt_opcode_t currentStatus;
   
