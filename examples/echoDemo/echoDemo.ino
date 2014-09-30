@@ -36,7 +36,7 @@ void setup(void)
   while(!Serial); // Leonardo/Micro should wait for serial init
   Serial.println(F("Adafruit Bluefruit Low Energy nRF8001 Print echo demo"));
 
-  // uart.setDeviceName("NEWNAME"); /* 7 characters max! */
+  // BTLESerial.setDeviceName("NEWNAME"); /* 7 characters max! */
 
   BTLEserial.begin();
 }
