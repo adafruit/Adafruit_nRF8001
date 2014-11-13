@@ -45,7 +45,7 @@
 typedef struct hal_aci_evt_t{
   uint8_t   debug_byte;
   aci_evt_t evt;
-} hal_aci_evt_t;
+} __attribute__((packed)) hal_aci_evt_t;
 
 typedef struct
 {

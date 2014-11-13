@@ -96,7 +96,7 @@ typedef enum
   */
   ACI_EVT_KEY_REQUEST                 = 0x8F
 
-} aci_evt_opcode_t;
+} __attribute__((packed)) aci_evt_opcode_t;
 
 /**
  * @struct aci_evt_params_device_started_t
@@ -107,7 +107,7 @@ typedef struct
   uint8_t device_mode; /**< enum aci_device_operation_mode_t -> Mode in which the device is being started */
   uint8_t hw_error;  /**< enum aci_hw_error_t -> Hardware Error if available for the start */
   uint8_t credit_available; /**< Flow control credit available for this specific FW build */
-} aci_evt_params_device_started_t;
+} __attribute__((packed)) aci_evt_params_device_started_t;
 
 /**
  * @struct aci_evt_params_hw_error_t
@@ -117,7 +117,7 @@ typedef struct
 {
   uint16_t line_num;
   uint8_t file_name[20];
-} aci_evt_params_hw_error_t;
+} __attribute__((packed)) aci_evt_params_hw_error_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_dtm_cmd_t
@@ -127,7 +127,7 @@ typedef struct
 {
   uint8_t  evt_msb;
   uint8_t  evt_lsb;
-} aci_evt_cmd_rsp_params_dtm_cmd_t;
+} __attribute__((packed)) aci_evt_cmd_rsp_params_dtm_cmd_t;
 
 /**
  * @struct aci_evt_cmd_rsp_read_dynamic_data_t
@@ -138,7 +138,7 @@ typedef struct
 {
   uint8_t seq_no;
   uint8_t dynamic_data[1];
-} aci_evt_cmd_rsp_read_dynamic_data_t;
+} __attribute__((packed)) aci_evt_cmd_rsp_read_dynamic_data_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_device_version_t
@@ -151,7 +151,7 @@ typedef struct
   uint8_t   setup_format;
   uint32_t  setup_id;
   uint8_t   setup_status;
-} aci_evt_cmd_rsp_params_get_device_version_t;
+} __attribute__((packed)) aci_evt_cmd_rsp_params_get_device_version_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_device_address_t
@@ -161,7 +161,7 @@ typedef struct
 {
   uint8_t bd_addr_own[BTLE_DEVICE_ADDRESS_SIZE];
   uint8_t bd_addr_type; /**< enum aci_bd_addr_type_t */
-} aci_evt_cmd_rsp_params_get_device_address_t;
+} __attribute__((packed)) aci_evt_cmd_rsp_params_get_device_address_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_battery_level_t
@@ -170,7 +170,7 @@ typedef struct
 typedef struct
 {
   uint16_t battery_level;
-} aci_evt_cmd_rsp_params_get_battery_level_t;
+} __attribute__((packed)) aci_evt_cmd_rsp_params_get_battery_level_t;
 
 /**
  * @struct aci_evt_cmd_rsp_params_get_temperature_t
@@ -179,7 +179,7 @@ typedef struct
 typedef struct
 {
   int16_t temperature_value;
-} aci_evt_cmd_rsp_params_get_temperature_t;
+} __attribute__((packed)) aci_evt_cmd_rsp_params_get_temperature_t;
 
 /**
  * @struct aci_evt_params_cmd_rsp_t
@@ -199,7 +199,7 @@ typedef struct
     aci_evt_cmd_rsp_params_get_temperature_t    get_temperature;
     uint8_t                                     padding[29];  
   } params;
-} aci_evt_params_cmd_rsp_t;
+} __attribute__((packed)) aci_evt_params_cmd_rsp_t;
 
 /**
  * @struct aci_evt_params_connected_t
@@ -213,7 +213,7 @@ typedef struct
   uint16_t conn_slave_rf_latency; /**< Number of RF events the slave can skip */
   uint16_t conn_rf_timeout; /**< Timeout as a multiple of 10ms i.e timeout = conn_rf_timeout * 10ms Range: 0x000A to 0x0C80 */
   uint8_t master_clock_accuracy; /**< enum aci_clock_accuracy_t -> Clock accuracy of Bluetooth master: Enumerated list of values from 500 ppm to 20 ppm */
-} aci_evt_params_connected_t;
+} __attribute__((packed)) aci_evt_params_connected_t;
 
 /**
  * @struct aci_evt_params_disconnected_t
@@ -223,7 +223,7 @@ typedef struct
 {
   uint8_t aci_status; /**< enum aci_status_code_t */
   uint8_t btle_status;
-} aci_evt_params_disconnected_t;
+} __attribute__((packed)) aci_evt_params_disconnected_t;
 
 /**
  * @struct aci_evt_params_bond_status_t
@@ -237,7 +237,7 @@ typedef struct
   uint8_t secmode2_bitmap;
   uint8_t keys_exchanged_slave;
   uint8_t keys_exchanged_master;
-} aci_evt_params_bond_status_t;
+} __attribute__((packed)) aci_evt_params_bond_status_t;
 
 /**
  * @struct aci_evt_params_pipe_status_t
@@ -247,7 +247,7 @@ typedef struct
 {
   uint8_t  pipes_open_bitmap[8];
   uint8_t  pipes_closed_bitmap[8];
-} aci_evt_params_pipe_status_t;
+} __attribute__((packed)) aci_evt_params_pipe_status_t;
 
 /**
  * @struct aci_evt_params_timing_t
@@ -258,7 +258,7 @@ typedef struct
   uint16_t conn_rf_interval;  /**< rf_interval = conn_rf_interval * 1.25 ms Range:0x0006 to 0x0C80 */
   uint16_t conn_slave_rf_latency; /**< Number of RF events the slave can skip */
   uint16_t conn_rf_timeout; /**< Timeout as a multiple of 10ms i.e timeout = conn_rf_timeout * 10ms Range: 0x000A to 0x0C80 */
-} aci_evt_params_timing_t;
+} __attribute__((packed)) aci_evt_params_timing_t;
 
 /**
  * @struct aci_evt_params_data_credit_t
@@ -267,7 +267,7 @@ typedef struct
 typedef struct
 {
   uint8_t credit;
-} aci_evt_params_data_credit_t;
+} __attribute__((packed)) aci_evt_params_data_credit_t;
 
 /**
  * @struct aci_evt_params_data_ack_t
@@ -276,7 +276,7 @@ typedef struct
 typedef struct
 {
   uint8_t pipe_number;
-} aci_evt_params_data_ack_t;
+} __attribute__((packed)) aci_evt_params_data_ack_t;
 
 /**
  * @struct aci_evt_params_data_received_t
@@ -285,12 +285,12 @@ typedef struct
 typedef struct
 {
   aci_rx_data_t rx_data;
-} aci_evt_params_data_received_t;
+} __attribute__((packed)) aci_evt_params_data_received_t;
 
 typedef struct
 {
   uint8_t content[1];
-} error_data_t;
+} __attribute__((packed)) error_data_t;
 
 /**
  * @struct aci_evt_params_pipe_error_t
@@ -304,7 +304,7 @@ typedef struct
   {
     error_data_t  error_data;
   } params;
-} aci_evt_params_pipe_error_t;
+} __attribute__((packed)) aci_evt_params_pipe_error_t;
 
 /**
  * @struct aci_evt_params_display_passkey_t
@@ -313,7 +313,7 @@ typedef struct
 typedef struct
 {
   uint8_t passkey[6];
-} aci_evt_params_display_passkey_t;
+} __attribute__((packed)) aci_evt_params_display_passkey_t;
 
 /**
  * @struct aci_evt_params_key_request_t
@@ -322,7 +322,7 @@ typedef struct
 typedef struct
 {
   uint8_t key_type; /**< enum aci_key_type_t */
-} aci_evt_params_key_request_t;
+} __attribute__((packed)) aci_evt_params_key_request_t;
 
 /**
  * @struct aci_event_params_echo_t
@@ -331,7 +331,7 @@ typedef struct
 typedef struct
 {
   uint8_t echo_data[ACI_ECHO_DATA_MAX_LEN];
-} aci_evt_params_echo_t;
+} __attribute__((packed)) aci_evt_params_echo_t;
 
 /**
  * @struct aci_evt_t
@@ -359,6 +359,6 @@ typedef struct
     aci_evt_params_display_passkey_t                    display_passkey;
     aci_evt_params_key_request_t                        key_request;
   } params;
-} aci_evt_t;
+} __attribute__((packed)) aci_evt_t;
 
 #endif // ACI_EVTS_H__
