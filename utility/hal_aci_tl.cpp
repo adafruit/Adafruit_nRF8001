@@ -293,6 +293,9 @@ void hal_aci_tl_init()
   digitalWrite(HAL_IO_RADIO_RESET, 1);
   delay(100);
   digitalWrite(HAL_IO_RADIO_RESET, 0);
+  #ifdef __arm__
+  delayMicroseconds(10);
+  #endif
   digitalWrite(HAL_IO_RADIO_RESET, 1);
   
   digitalWrite(SCK,  0);

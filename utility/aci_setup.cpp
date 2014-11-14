@@ -59,6 +59,15 @@ aci_status_code_t aci_setup(aci_state_t *aci_stat, uint8_t num_cmds, uint8_t num
         //Debug messages:
         //Serial.print(F("Setup msg"));
         //Serial.println(i, DEC);
+        #ifdef __arm__
+        // This entire setup scheme may have an off-by-one error, where it tries to
+        // put 8 commends into the queue which can only hold 7 due to the way the
+        // head & tail indexes are managed.  On AVR, the processor is simply too
+        // slow to fill the queue before at least one interrupt, but a fast ARM
+        // processor can easily do so.  This delay is a workaround to avoid having
+        // to restructure a lot of code...
+        delayMicroseconds(10);
+        #endif
     }
     
     i++;
