@@ -15,7 +15,7 @@
 #define PLATFORM_H__
 
 /** @file
-* @brief 
+* @brief
 */
 #include "Arduino.h"
 
@@ -59,7 +59,7 @@ while(0)
 
 #define hal_pltf_enable_spi()  do { SPCR |= _BV(SPE); } while(0)
 #define hal_pltf_disable_spi() do { SPCR &= ~_BV(SPE); } while(0)
-  
+
 
 
 #define hal_pltf_configure_spi_for_aci() do{\

@@ -1,0 +1,16 @@
+# Keyword highlighting
+Adafruit_BLE_UART       KEYWORD1
+begin                   KEYWORD2
+pollACI                 KEYWORD2
+write                   KEYWORD2
+println                 KEYWORD2
+print                   KEYWORD2
+setACIcallback          KEYWORD2
+setRXcallback           KEYWORD2
+setDeviceName           KEYWORD2
+available               KEYWORD2
+read                    KEYWORD2
+peek                    KEYWORD2
+flush                   KEYWORD2
+getState                KEYWORD2
+BLE_RW_DEBUG            LITERAL1
