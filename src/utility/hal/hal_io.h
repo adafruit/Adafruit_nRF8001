@@ -2,14 +2,14 @@
  *
  * The information contained herein is property of Nordic Semiconductor ASA.
  * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT. 
+ * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
  *
  * Licensees are granted free, non-transferable use of the information. NO
  * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
  * the file.
  *
  * $LastChangedRevision$
- */ 
+ */
 
 /** @file
 */
@@ -20,7 +20,7 @@
  * @brief Macros input/output management
 */
 
-#include "hal_platform.h"
+#include "../hal_platform.h"
 
 #ifndef HAL_IO_H__
 #define HAL_IO_H__
@@ -55,7 +55,7 @@
  *  @param io_name Output to change.
  *  @param io_state Level to set.
 */
-#define HAL_IO_SET_STATE(io_name, io_state) digitalWrite(io_name, io_state) 
+#define HAL_IO_SET_STATE(io_name, io_state) digitalWrite(io_name, io_state)
 
 /**@brief Macro that reads the current state of an input.
  *  @details

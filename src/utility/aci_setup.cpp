@@ -10,18 +10,18 @@
  *
  * $LastChangedRevision$
  */
- 
+
 /**
  * My project template
  */
- 
+
 #include <avr/pgmspace.h>
-#include <ble_system.h>
-#include <lib_aci.h>
+#include "ble_system.h"
+#include "lib_aci.h"
 #include "aci_setup.h"
 
 
-// aci_struct that will contain 
+// aci_struct that will contain
 // total initial credits
 // current credit
 // current state of the aci (setup/standby/active/sleep)
@@ -40,14 +40,14 @@ aci_status_code_t aci_setup(aci_state_t *aci_stat, uint8_t num_cmds, uint8_t num
   uint8_t i = 0;
   uint8_t evt_count = 0;
   aci_evt_t * aci_evt = NULL;
-  
+
   while (i < num_cmds)
   {
     //Copy the setup ACI message from Flash to RAM
     //Add 2 bytes to the length byte for status byte, length for the total number of bytes
-    memcpy_P(&aci_cmd, &(aci_stat->aci_setup_info.setup_msgs[num_cmd_offset+i]), 
-              pgm_read_byte_near(&(aci_stat->aci_setup_info.setup_msgs[num_cmd_offset+i].buffer[0]))+2); 
-    
+    memcpy_P(&aci_cmd, &(aci_stat->aci_setup_info.setup_msgs[num_cmd_offset+i]),
+              pgm_read_byte_near(&(aci_stat->aci_setup_info.setup_msgs[num_cmd_offset+i].buffer[0]))+2);
+
     //Put the Setup ACI message in the command queue
     if (!hal_aci_tl_send(&aci_cmd))
     {
@@ -69,7 +69,7 @@ aci_status_code_t aci_setup(aci_state_t *aci_stat, uint8_t num_cmds, uint8_t num
         delayMicroseconds(10);
         #endif
     }
-    
+
     i++;
   }
   while (1)
@@ -80,16 +80,16 @@ aci_status_code_t aci_setup(aci_state_t *aci_stat, uint8_t num_cmds, uint8_t num
     if (true == lib_aci_event_get(aci_stat, &aci_data))
     {
       aci_evt = &aci_data.evt;
-      
+
       evt_count++;
-  
+
       if (ACI_EVT_CMD_RSP != aci_evt->evt_opcode )
       {
         //Got something other than a command response evt -> Error
         return ACI_STATUS_ERROR_INTERNAL;
       }
-      
-      if (!((ACI_STATUS_TRANSACTION_CONTINUE == aci_evt->params.cmd_rsp.cmd_status) || 
+
+      if (!((ACI_STATUS_TRANSACTION_CONTINUE == aci_evt->params.cmd_rsp.cmd_status) ||
            (ACI_STATUS_TRANSACTION_COMPLETE == aci_evt->params.cmd_rsp.cmd_status)))
       {
         return (aci_status_code_t )aci_evt->params.cmd_rsp.cmd_status;
@@ -99,15 +99,15 @@ aci_status_code_t aci_setup(aci_state_t *aci_stat, uint8_t num_cmds, uint8_t num
         //Serial.print(F("Cmd Response Evt "));
         //Serial.println(evt_count);
       }
-      
+
       if (num_cmds == evt_count)
       {
         break;
-      }                  
+      }
     }
   }
-  
-  return ((aci_status_code_t)aci_evt->params.cmd_rsp.cmd_status);              
+
+  return ((aci_status_code_t)aci_evt->params.cmd_rsp.cmd_status);
 }
 
 
@@ -131,10 +131,9 @@ aci_status_code_t do_aci_setup(aci_state_t *aci_stat)
     }
     if ((aci_stat->aci_setup_info.num_setup_msgs % ACI_QUEUE_SIZE) != 0)
     {
-     status = aci_setup(aci_stat, aci_stat->aci_setup_info.num_setup_msgs % ACI_QUEUE_SIZE, (ACI_QUEUE_SIZE*i));               
+     status = aci_setup(aci_stat, aci_stat->aci_setup_info.num_setup_msgs % ACI_QUEUE_SIZE, (ACI_QUEUE_SIZE*i));
     }
   }
 
   return status;
 }
-
