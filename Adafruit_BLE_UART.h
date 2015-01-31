@@ -63,6 +63,7 @@ class Adafruit_BLE_UART : public Stream
   void flush(void);
 
   aci_evt_opcode_t getState(void);
+  bool getRemoteAddress(uint8_t *AddressType, uint8_t *Address);
 
  private:  
   void defaultACICallback(aci_evt_opcode_t event);
