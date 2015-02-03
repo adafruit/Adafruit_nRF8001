@@ -277,7 +277,7 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
     if(!lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
     {
       pollACI();
-      continue;
+      break; // was continue;
     }
 
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer[sent],
@@ -286,7 +286,7 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 
     delay(35); // required delay between sends
 
-    if(!(len -= bytesThisPass)) break;
+    len -= bytesThisPass; // was if(!(len -= bytesThisPass)) break;
     sent += bytesThisPass;
   }
 
