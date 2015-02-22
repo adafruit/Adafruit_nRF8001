@@ -15,6 +15,15 @@ Written by Kevin Townsend/KTOWN  for Adafruit Industries.
 MIT license, check LICENSE for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
+// NBP (2/21/2015): Modified to fix pipe errors on Adafruit_BLE_UART::write()
+//                    pipe error 0x91 "ACI_STATUS_ERROR_CREDIT_NOT_AVAILABLE"
+// * write() added check of aci_state.data_credit_available along with lib_aci_is_pipe_available()
+//     before calling lib_aci_send_data() -- credit was going below 0 (wrap around to 255)
+// * Discovered missing break in pollACI() after case ACI_EVT_CONNECTED block.
+// * pollACI() case ACI_EVT_PIPE_ERROR removed credit increment, let ACI_EVT_DATA_CREDIT do it.
+// * write() removed delay(35), not needed with credit check fixes.
+//     Seems to also reduce transmission losses (allows for more pollACI() calls?)
+
 #include <SPI.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
@@ -249,7 +258,8 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
     if(bytesThisPass > ACI_PIPE_TX_DATA_MAX_LEN)
        bytesThisPass = ACI_PIPE_TX_DATA_MAX_LEN;
 
-    if(!lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
+    if((!lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
+       || aci_state.data_credit_available < 1) // NBP (2/21/2015): need to check for available credit
     {
       pollACI();
       continue;
@@ -259,7 +269,7 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
       bytesThisPass);
     aci_state.data_credit_available--;
 
-    delay(35); // required delay between sends
+    //delay(35); // required delay between sends -- NBP (2/21/2015) not needed with credit check fix
 
     if(!(len -= bytesThisPass)) break;
     sent += bytesThisPass;
@@ -273,12 +283,13 @@ size_t Adafruit_BLE_UART::write(uint8_t buffer)
 #ifdef BLE_RW_DEBUG
   Serial.print(F("\tWriting one byte 0x")); Serial.println(buffer, HEX);
 #endif
-  if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
+  if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX)
+      && aci_state.data_credit_available > 0) // NBP (2/21/2015): need to check for available credit
   {
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer, 1);
     aci_state.data_credit_available--;
 
-    delay(35); // required delay between sends
+    //delay(35); // required delay between sends -- NBP (2/21/2015) not needed with credit check fix
     return 1;
   }
 
@@ -383,7 +394,8 @@ void Adafruit_BLE_UART::pollACI()
 	defaultACICallback(ACI_EVT_CONNECTED);
 	if (aci_event) 
 	  aci_event(ACI_EVT_CONNECTED);
-        
+        break; // NBP (2/21/2015): add missing break (?)
+
       case ACI_EVT_PIPE_STATUS:
         if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX) && (false == timing_change_done))
         {
@@ -432,7 +444,7 @@ void Adafruit_BLE_UART::pollACI()
         }
 
         /* Increment the credit available as the data packet was not sent */
-        aci_state.data_credit_available++;
+        //aci_state.data_credit_available++; // NBP (2/21/2015): do not increment, let ACI_EVT_DATA_CREDIT do it.
         break;
     }
   }
