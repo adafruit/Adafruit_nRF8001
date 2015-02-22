@@ -271,7 +271,7 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 
     //delay(35); // required delay between sends -- NBP (2/21/2015) not needed with credit check fix
 
-    if(!(len -= bytesThisPass)) break;
+    len -= bytesThisPass; // NBP (2/22/2015) fix for return value, no break, also fixes println()
     sent += bytesThisPass;
   }
 
