@@ -27,7 +27,7 @@ All text above, and the splash screen below must be included in any redistributi
 
 #include "utility/aci_evts.h"
 
-#define BLE_RW_DEBUG
+//#define BLE_RW_DEBUG
 
 extern "C" 
 {
