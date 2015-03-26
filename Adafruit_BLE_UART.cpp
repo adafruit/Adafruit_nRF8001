@@ -4,14 +4,14 @@ This is a library for our nRF8001 Bluetooth Low Energy Breakout
   Pick one up today in the adafruit shop!
   ------> http://www.adafruit.com/products/1697
 
-These displays use SPI to communicate, 4 or 5 pins are required to  
+These displays use SPI to communicate, 4 or 5 pins are required to
 interface
 
-Adafruit invests time and resources providing this open source code, 
-please support Adafruit and open-source hardware by purchasing 
+Adafruit invests time and resources providing this open source code,
+please support Adafruit and open-source hardware by purchasing
 products from Adafruit!
 
-Written by Kevin Townsend/KTOWN  for Adafruit Industries.  
+Written by Kevin Townsend/KTOWN  for Adafruit Industries.
 MIT license, check LICENSE for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
@@ -66,7 +66,7 @@ void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
   for(int i=0; i<len; i++)
   {
     uint16_t new_head = (uint16_t)(adafruit_ble_rx_head + 1) % ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
-    
+
     // if we should be storing the received character into the location
     // just before the tail (meaning that the head would advance to the
     // current location of the tail), we're about to overflow the buffer
@@ -75,7 +75,7 @@ void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
       adafruit_ble_rx_buffer[adafruit_ble_rx_head] = buffer[i];
 
       // debug echo print
-      // Serial.print((char)buffer[i]); 
+      // Serial.print((char)buffer[i]);
 
       adafruit_ble_rx_head = new_head;
     }
@@ -85,7 +85,7 @@ void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
   Serial.print("Buffer: ");
   for(int i=0; i<adafruit_ble_rx_head; i++)
     {
-      Serial.print(" 0x"); Serial.print((char)adafruit_ble_rx_buffer[i], HEX); 
+      Serial.print(" 0x"); Serial.print((char)adafruit_ble_rx_buffer[i], HEX);
     }
   Serial.println();
   */
@@ -96,7 +96,7 @@ void Adafruit_BLE_UART::defaultRX(uint8_t *buffer, uint8_t len)
 
 int Adafruit_BLE_UART::available(void)
 {
-  return (uint16_t)(ADAFRUIT_BLE_UART_RXBUFFER_SIZE + adafruit_ble_rx_head - adafruit_ble_rx_tail) 
+  return (uint16_t)(ADAFRUIT_BLE_UART_RXBUFFER_SIZE + adafruit_ble_rx_head - adafruit_ble_rx_tail)
     % ADAFRUIT_BLE_UART_RXBUFFER_SIZE;
 }
 
@@ -150,14 +150,14 @@ aci_evt_opcode_t Adafruit_BLE_UART::getState(void) {
 Adafruit_BLE_UART::Adafruit_BLE_UART(int8_t req, int8_t rdy, int8_t rst)
 {
   debugMode = true;
-  
+
   HAL_IO_RADIO_REQN = req;
   HAL_IO_RADIO_RDY = rdy;
   HAL_IO_RADIO_RESET = rst;
 
   rx_event = NULL;
   aci_event = NULL;
-  
+
   memset(device_name, 0x00, 8);
 
   adafruit_ble_rx_head = adafruit_ble_rx_tail = 0;
@@ -283,7 +283,7 @@ size_t Adafruit_BLE_UART::write(uint8_t buffer)
   }
 
   pollACI();
-  
+
   return 0;
 }
 
@@ -317,13 +317,13 @@ void Adafruit_BLE_UART::pollACI()
   if (lib_aci_event_get(&aci_state, &aci_data))
   {
     aci_evt_t * aci_evt;
-    
-    aci_evt = &aci_data.evt;    
+
+    aci_evt = &aci_data.evt;
     switch(aci_evt->evt_opcode)
     {
         /* As soon as you reset the nRF8001 you will get an ACI Device Started Event */
         case ACI_EVT_DEVICE_STARTED:
-        {          
+        {
           aci_state.data_credit_total = aci_evt->params.device_started.credit_available;
           switch(aci_evt->params.device_started.device_mode)
           {
@@ -336,7 +336,7 @@ void Adafruit_BLE_UART::pollACI()
               }
             }
             break;
-            
+
             case ACI_DEVICE_STANDBY:
               /* Start advertising ... first value is advertising time in seconds, the */
               /* second value is the advertising interval in 0.625ms units */
@@ -347,12 +347,12 @@ void Adafruit_BLE_UART::pollACI()
               }
               lib_aci_connect(adv_timeout, adv_interval);
               defaultACICallback(ACI_EVT_DEVICE_STARTED);
-	      if (aci_event) 
+	      if (aci_event)
 		aci_event(ACI_EVT_DEVICE_STARTED);
           }
         }
         break;
-        
+
       case ACI_EVT_CMD_RSP:
         /* If an ACI command response event comes with an error -> stop */
         if (ACI_STATUS_SUCCESS != aci_evt->params.cmd_rsp.cmd_status)
@@ -370,33 +370,33 @@ void Adafruit_BLE_UART::pollACI()
         if (ACI_CMD_GET_DEVICE_VERSION == aci_evt->params.cmd_rsp.cmd_opcode)
         {
           // Store the version and configuration information of the nRF8001 in the Hardware Revision String Characteristic
-          lib_aci_set_local_data(&aci_state, PIPE_DEVICE_INFORMATION_HARDWARE_REVISION_STRING_SET, 
+          lib_aci_set_local_data(&aci_state, PIPE_DEVICE_INFORMATION_HARDWARE_REVISION_STRING_SET,
             (uint8_t *)&(aci_evt->params.cmd_rsp.params.get_device_version), sizeof(aci_evt_cmd_rsp_params_get_device_version_t));
-        }        
+        }
         break;
-        
+
       case ACI_EVT_CONNECTED:
         aci_state.data_credit_available = aci_state.data_credit_total;
         /* Get the device version of the nRF8001 and store it in the Hardware Revision String */
         lib_aci_device_version();
-        
+
 	defaultACICallback(ACI_EVT_CONNECTED);
-	if (aci_event) 
+	if (aci_event)
 	  aci_event(ACI_EVT_CONNECTED);
-        
+
       case ACI_EVT_PIPE_STATUS:
         if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX) && (false == timing_change_done))
         {
-          lib_aci_change_timing_GAP_PPCP(); // change the timing on the link as specified in the nRFgo studio -> nRF8001 conf. -> GAP. 
+          lib_aci_change_timing_GAP_PPCP(); // change the timing on the link as specified in the nRFgo studio -> nRF8001 conf. -> GAP.
                                             // Used to increase or decrease bandwidth
           timing_change_done = true;
         }
         break;
-        
+
       case ACI_EVT_TIMING:
         /* Link connection interval changed */
         break;
-        
+
       case ACI_EVT_DISCONNECTED:
         /* Restart advertising ... first value is advertising time in seconds, the */
         /* second value is the advertising interval in 0.625ms units */
@@ -411,17 +411,17 @@ void Adafruit_BLE_UART::pollACI()
 	if (aci_event)
 	  aci_event(ACI_EVT_DEVICE_STARTED);
 	break;
-        
+
       case ACI_EVT_DATA_RECEIVED:
 	defaultRX(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
         if (rx_event)
 	  rx_event(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
         break;
-   
+
       case ACI_EVT_DATA_CREDIT:
         aci_state.data_credit_available = aci_state.data_credit_available + aci_evt->params.data_credit.credit;
         break;
-      
+
       case ACI_EVT_PIPE_ERROR:
         /* See the appendix in the nRF8001 Product Specication for details on the error codes */
         if (debugMode) {
@@ -448,19 +448,19 @@ void Adafruit_BLE_UART::pollACI()
 /**************************************************************************/
 /*!
     Configures the nRF8001 and starts advertising the UART Service
-    
-    @param[in]  advTimeout  
+
+    @param[in]  advTimeout
                 The advertising timeout in seconds (0 = infinite advertising)
     @param[in]  advInterval
                 The delay between advertising packets in 0.625ms units
 */
 /**************************************************************************/
-bool Adafruit_BLE_UART::begin(uint16_t advTimeout, uint16_t advInterval) 
+bool Adafruit_BLE_UART::begin(uint16_t advTimeout, uint16_t advInterval)
 {
   /* Store the advertising timeout and interval */
   adv_timeout = advTimeout;   /* ToDo: Check range! */
   adv_interval = advInterval; /* ToDo: Check range! */
-  
+
   /* Setup the service data from nRFGo Studio (services.h) */
   if (NULL != services_pipe_type_mapping)
   {
@@ -478,6 +478,19 @@ bool Adafruit_BLE_UART::begin(uint16_t advTimeout, uint16_t advInterval)
   lib_aci_init(&aci_state);
 
   /* ToDo: Check for chip ID to make sure we're connected! */
-  
+
   return true;
+}
+
+/**************************************************************************/
+/*!
+  Disconnects the peripheral (this device) from the connection.
+
+*/
+/**************************************************************************/
+bool Adafruit_BLE_UART::disconnect(void)
+{
+
+    return lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
+
 }

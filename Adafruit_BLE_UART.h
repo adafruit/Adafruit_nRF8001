@@ -4,14 +4,14 @@ This is a library for our nRF8001 Bluetooth Low Energy Breakout
   Pick one up today in the adafruit shop!
   ------> http://www.adafruit.com/products/1697
 
-These displays use SPI to communicate, 4 or 5 pins are required to  
+These displays use SPI to communicate, 4 or 5 pins are required to
 interface
 
-Adafruit invests time and resources providing this open source code, 
-please support Adafruit and open-source hardware by purchasing 
+Adafruit invests time and resources providing this open source code,
+please support Adafruit and open-source hardware by purchasing
 products from Adafruit!
 
-Written by Kevin Townsend/KTOWN  for Adafruit Industries.  
+Written by Kevin Townsend/KTOWN  for Adafruit Industries.
 MIT license, check LICENSE for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
@@ -29,7 +29,7 @@ All text above, and the splash screen below must be included in any redistributi
 
 #define BLE_RW_DEBUG
 
-extern "C" 
+extern "C"
 {
   /* Callback prototypes */
   typedef void (*aci_callback)(aci_evt_opcode_t event);
@@ -40,7 +40,7 @@ class Adafruit_BLE_UART : public Stream
 {
  public:
   Adafruit_BLE_UART (int8_t req, int8_t rdy, int8_t rst);
-  
+
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
   size_t write ( uint8_t * buffer, uint8_t len );
@@ -56,6 +56,8 @@ class Adafruit_BLE_UART : public Stream
   void setRXcallback(rx_callback rxEvent = NULL);
   void setDeviceName(const char * deviceName);
 
+  bool disconnect(void);
+
   // Stream compatibility
   int available(void);
   int read(void);
@@ -64,13 +66,13 @@ class Adafruit_BLE_UART : public Stream
 
   aci_evt_opcode_t getState(void);
 
- private:  
+ private:
   void defaultACICallback(aci_evt_opcode_t event);
   void defaultRX(uint8_t *buffer, uint8_t len);
 
   // callbacks you can set with setCallback function for user extension
   aci_callback aci_event;
-  rx_callback  rx_event; 
+  rx_callback  rx_event;
 
   bool         debugMode;
   uint16_t     adv_timeout;
@@ -78,7 +80,7 @@ class Adafruit_BLE_UART : public Stream
   char         device_name[8];
 
   aci_evt_opcode_t currentStatus;
-  
+
   // pins usd
   int8_t _REQ, _RDY, _RST;
 };
