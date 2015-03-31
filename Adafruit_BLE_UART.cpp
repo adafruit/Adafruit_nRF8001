@@ -236,6 +236,13 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 {
   uint8_t bytesThisPass, sent = 0;
 
+  /* Blocking delay waiting for available credit(s) */
+  while (0 == aci_state.data_credit_available)
+  {
+    pollACI(); 
+    delay(10);
+  }
+  
 #ifdef BLE_RW_DEBUG
   Serial.print(F("\tWriting out to BTLE:"));
   for (uint8_t i=0; i<len; i++) {
@@ -270,6 +277,13 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 
 size_t Adafruit_BLE_UART::write(uint8_t buffer)
 {
+  /* Blocking delay waiting for available credit(s) */
+  while (0 == aci_state.data_credit_available)
+  {
+    pollACI(); 
+    delay(10);
+  }
+  
 #ifdef BLE_RW_DEBUG
   Serial.print(F("\tWriting one byte 0x")); Serial.println(buffer, HEX);
 #endif
