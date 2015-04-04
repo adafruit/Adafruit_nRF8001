@@ -274,7 +274,6 @@ void hal_aci_tl_init()
 {
   received_data.buffer[0] = 0;
 
-  //SPISettings NRF8001BLE_SPIconfig(1000000, LSBFIRST, SPI_MODE0); 
   
   SPI.begin();
   
@@ -358,7 +357,7 @@ hal_aci_data_t * hal_aci_tl_poll_get(void)
 
 
   //SPI.begin();  
-  SPI.beginTransaction(SPISettings(1000000, LSBFIRST, SPI_MODE0));  // gain control of SPI bus
+  SPI.beginTransaction(SPISettings(2000000, LSBFIRST, SPI_MODE0));  // gain control of SPI bus
   HAL_IO_SET_STATE(HAL_IO_RADIO_REQN, 0);
   
   // Receive from queue
