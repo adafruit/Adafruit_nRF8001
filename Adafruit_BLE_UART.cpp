@@ -232,9 +232,10 @@ size_t Adafruit_BLE_UART::print(const __FlashStringHelper *ifsh)
   return written;
 }
 
-size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
+size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len, uint16_t timeout)
 {
   uint8_t bytesThisPass, sent = 0;
+  uint16_t timer = 0;
 
 #ifdef BLE_RW_DEBUG
   Serial.print(F("\tWriting out to BTLE:"));
@@ -252,6 +253,15 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
     if(!lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
     {
       pollACI();
+      
+      if (timeout != 0) {
+        timer += 10;
+	    if (timer > timeout) {
+		  return sent;
+	    }
+	    delay(10);
+      }
+      
       continue;
     }
 
