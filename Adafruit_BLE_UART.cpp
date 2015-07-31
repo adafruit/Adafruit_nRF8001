@@ -301,7 +301,7 @@ void Adafruit_BLE_UART::setDeviceName(const char * deviceName)
   }
   else
   {
-    memcpy(device_name, deviceName, strlen(deviceName));
+    memcpy(device_name, deviceName, strlen(deviceName)+1);
   }
 }
 
