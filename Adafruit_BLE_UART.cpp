@@ -54,6 +54,9 @@ volatile uint16_t adafruit_ble_rx_tail;
 
 int8_t HAL_IO_RADIO_RESET, HAL_IO_RADIO_REQN, HAL_IO_RADIO_RDY, HAL_IO_RADIO_IRQ;
 
+static uint8_t currentRemoteAddressType;
+static uint8_t currentRemoteAddress[BTLE_DEVICE_ADDRESS_SIZE]; // used to store remote address when connection is made
+
 /**************************************************************************/
 /*!
     Constructor for the UART service
@@ -141,6 +144,28 @@ aci_evt_opcode_t Adafruit_BLE_UART::getState(void) {
 }
 
 
+// when connected, find out to what MAC address, and what sort of MAC address they're using:
+//   0x01 Public address
+//   0x02 Random Static Address
+//   0x03 Random Private Address (Resolvable)
+//   0x04 Random Private Address (Un-resolvable
+//
+// Parameters:
+//   uint8_t *AddressType -- pointer to one-byte buffer for address type
+//   uint8_t *Address     -- pointer to BTLE_DEVICE_ADDRESS_SIZE buffer for MAC address
+//
+// returns true if new address is different from one passed in
+
+bool Adafruit_BLE_UART::getRemoteAddress(uint8_t *AddressType, uint8_t *Address) {
+  bool changed = false;
+  *AddressType = currentRemoteAddressType;
+  for (int i = 0; i<BTLE_DEVICE_ADDRESS_SIZE; i++)
+  {
+    changed = changed or Address[i] != currentRemoteAddress[i];
+    Address[i] = currentRemoteAddress[i];
+  }
+  return changed;
+}
 
 /**************************************************************************/
 /*!
@@ -252,7 +277,7 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
     if(!lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX))
     {
       pollACI();
-      continue;
+      break; // was continue;
     }
 
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, &buffer[sent],
@@ -261,7 +286,7 @@ size_t Adafruit_BLE_UART::write(uint8_t * buffer, uint8_t len)
 
     delay(35); // required delay between sends
 
-    if(!(len -= bytesThisPass)) break;
+    len -= bytesThisPass; // was if(!(len -= bytesThisPass)) break;
     sent += bytesThisPass;
   }
 
@@ -317,25 +342,25 @@ void Adafruit_BLE_UART::pollACI()
   if (lib_aci_event_get(&aci_state, &aci_data))
   {
     aci_evt_t * aci_evt;
-    
-    aci_evt = &aci_data.evt;    
+    aci_evt = &aci_data.evt;
+   
     switch(aci_evt->evt_opcode)
     {
         /* As soon as you reset the nRF8001 you will get an ACI Device Started Event */
-        case ACI_EVT_DEVICE_STARTED:
+      case ACI_EVT_DEVICE_STARTED:
         {          
           aci_state.data_credit_total = aci_evt->params.device_started.credit_available;
           switch(aci_evt->params.device_started.device_mode)
           {
             case ACI_DEVICE_SETUP:
-            /* Device is in setup mode! */
-            if (ACI_STATUS_TRANSACTION_COMPLETE != do_aci_setup(&aci_state))
-            {
-              if (debugMode) {
-                Serial.println(F("Error in ACI Setup"));
+              /* Device is in setup mode! */
+              if (ACI_STATUS_TRANSACTION_COMPLETE != do_aci_setup(&aci_state))
+              {
+                if (debugMode) {
+                  Serial.println(F("Error in ACI Setup"));
+                }
               }
-            }
-            break;
+              break;
             
             case ACI_DEVICE_STANDBY:
               /* Start advertising ... first value is advertising time in seconds, the */
@@ -347,8 +372,8 @@ void Adafruit_BLE_UART::pollACI()
               }
               lib_aci_connect(adv_timeout, adv_interval);
               defaultACICallback(ACI_EVT_DEVICE_STARTED);
-	      if (aci_event) 
-		aci_event(ACI_EVT_DEVICE_STARTED);
+              if (aci_event) 
+		            aci_event(ACI_EVT_DEVICE_STARTED);
           }
         }
         break;
@@ -379,11 +404,22 @@ void Adafruit_BLE_UART::pollACI()
         aci_state.data_credit_available = aci_state.data_credit_total;
         /* Get the device version of the nRF8001 and store it in the Hardware Revision String */
         lib_aci_device_version();
+
+        // connected node's MAC address type is at aci_evt->params.connected.dev_addr_type
+        // and address is at aci_evt->params.connected.dev_addr[]
+        // BTLE_DEVICE_ADDRESS_SIZE bytes, save these values for future reference
+        currentRemoteAddressType =(uint8_t)aci_evt->params.connected.dev_addr_type;
+        for (int i = 0; i<BTLE_DEVICE_ADDRESS_SIZE; i++)
+        {
+          currentRemoteAddress[i] = aci_evt->params.connected.dev_addr[i];
+        }
+
         
-	defaultACICallback(ACI_EVT_CONNECTED);
-	if (aci_event) 
-	  aci_event(ACI_EVT_CONNECTED);
-        
+      	defaultACICallback(ACI_EVT_CONNECTED);
+      	if (aci_event) 
+      	  aci_event(ACI_EVT_CONNECTED); // do the user callback, if there is one.
+      // TODO: Should this fall through?
+
       case ACI_EVT_PIPE_STATUS:
         if (lib_aci_is_pipe_available(&aci_state, PIPE_UART_OVER_BTLE_UART_TX_TX) && (false == timing_change_done))
         {
@@ -401,21 +437,21 @@ void Adafruit_BLE_UART::pollACI()
         /* Restart advertising ... first value is advertising time in seconds, the */
         /* second value is the advertising interval in 0.625ms units */
 
-	defaultACICallback(ACI_EVT_DISCONNECTED);
-	if (aci_event)
-	  aci_event(ACI_EVT_DISCONNECTED);
+      	defaultACICallback(ACI_EVT_DISCONNECTED);
+      	if (aci_event)
+      	  aci_event(ACI_EVT_DISCONNECTED);
 
-	lib_aci_connect(adv_timeout, adv_interval);
+      	lib_aci_connect(adv_timeout, adv_interval);
 
-	defaultACICallback(ACI_EVT_DEVICE_STARTED);
-	if (aci_event)
-	  aci_event(ACI_EVT_DEVICE_STARTED);
-	break;
+      	defaultACICallback(ACI_EVT_DEVICE_STARTED);
+      	if (aci_event)
+      	  aci_event(ACI_EVT_DEVICE_STARTED);
+      	break;
         
       case ACI_EVT_DATA_RECEIVED:
-	defaultRX(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
+        defaultRX(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
         if (rx_event)
-	  rx_event(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
+          rx_event(aci_evt->params.data_received.rx_data.aci_data, aci_evt->len - 2);
         break;
    
       case ACI_EVT_DATA_CREDIT:
