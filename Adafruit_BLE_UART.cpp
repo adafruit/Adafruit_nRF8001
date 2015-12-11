@@ -17,7 +17,9 @@ All text above, and the splash screen below must be included in any redistributi
 *********************************************************************/
 #include <SPI.h>
 #include <avr/pgmspace.h>
-#include <util/delay.h>
+#if defined(__AVR__)
+  #include <util/delay.h>
+#endif
 #include <stdlib.h>
 #include <ble_system.h>
 #include <lib_aci.h>
