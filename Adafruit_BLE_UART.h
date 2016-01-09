@@ -28,7 +28,7 @@ All text above, and the splash screen below must be included in any redistributi
 #include "utility/aci_evts.h"
 
 /* Uncomment the next line to display debug messages when reading/writing packets */
-#define BLE_RW_DEBUG
+//#define BLE_RW_DEBUG
 
 extern "C" 
 {
