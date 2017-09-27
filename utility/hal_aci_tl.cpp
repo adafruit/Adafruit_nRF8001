@@ -193,6 +193,8 @@ void m_print_aci_data(hal_aci_data_t *p_data)
   Serial.println(F(""));
 }
 
+void m_rdy_line_handle(void);  //forward declaration
+
 void toggle_eimsk(bool state)
 {
 #if defined (__AVR__)
@@ -215,8 +217,14 @@ void toggle_eimsk(bool state)
   {
     /* RDY isn't a valid HW INT pin! */
     while(1);
-  }   
-#endif      
+  }
+#else
+    if(state)
+        attachInterrupt(HAL_IO_RADIO_IRQ, m_rdy_line_handle, LOW);
+    else
+        detachInterrupt(HAL_IO_RADIO_IRQ);
+#endif
+    
 }
 
 void m_rdy_line_handle(void)
@@ -312,12 +320,17 @@ void hal_aci_tl_init()
   digitalWrite(SCK,  0);  
   
   HAL_IO_RADIO_IRQ = 0xFF;
+    
+#if defined(__AVR__)
   for (uint8_t i=0; i<sizeof(dreqinttable); i+=2) {
     if (HAL_IO_RADIO_RDY == dreqinttable[i]) {
       HAL_IO_RADIO_IRQ = dreqinttable[i+1];
     }
   }
-
+#else
+    HAL_IO_RADIO_IRQ = digitalPinToInterrupt(HAL_IO_RADIO_RDY);
+#endif
+    
   delay(30); //Wait for the nRF8001 to get hold of its lines - the lines float for a few ms after the reset
   if (HAL_IO_RADIO_IRQ != 0xFF)
     SPI.usingInterrupt(HAL_IO_RADIO_IRQ); // add checking for spi conflicts
