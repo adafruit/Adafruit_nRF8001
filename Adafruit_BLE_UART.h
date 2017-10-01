@@ -44,8 +44,8 @@ class Adafruit_BLE_UART : public Stream
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
-  size_t write ( uint8_t * buffer, uint8_t len );
-  size_t write ( uint8_t buffer);
+  size_t write ( const uint8_t * buffer, size_t len ) override;
+  size_t write ( uint8_t buffer) override;
 
   size_t println(const char * thestr);
   size_t print(const char * thestr);
@@ -58,10 +58,10 @@ class Adafruit_BLE_UART : public Stream
   void setDeviceName(const char * deviceName);
 
   // Stream compatibility
-  int available(void);
-  int read(void);
-  int peek(void);
-  void flush(void);
+  int available(void) override;
+  int read(void) override;
+  int peek(void) override;
+  void flush(void) override;
 
   aci_evt_opcode_t getState(void);
 
