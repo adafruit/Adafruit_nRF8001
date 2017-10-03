@@ -44,7 +44,7 @@ class Adafruit_BLE_UART : public Stream
   
   bool begin   ( uint16_t advTimeout = 0, uint16_t advInterval = 80 );
   void pollACI ( void );
-  size_t write ( uint8_t * buffer, uint8_t len );
+  size_t write ( uint8_t * buffer, uint8_t len, uint16_t timeout = 0 );
   size_t write ( uint8_t buffer);
 
   size_t println(const char * thestr);
