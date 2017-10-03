@@ -497,3 +497,16 @@ bool Adafruit_BLE_UART::begin(uint16_t advTimeout, uint16_t advInterval)
 
   return true;
 }
+
+/**************************************************************************/
+/*!
+  Disconnects the peripheral (this device) from the connection.
+
+*/
+/**************************************************************************/
+bool Adafruit_BLE_UART::disconnect(void)
+{
+
+    return lib_aci_disconnect(&aci_state, ACI_REASON_TERMINATE);
+
+}
