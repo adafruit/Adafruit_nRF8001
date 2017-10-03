@@ -35,6 +35,8 @@ extern "C"
   /* Callback prototypes */
   typedef void (*aci_callback)(aci_evt_opcode_t event);
   typedef void (*rx_callback) (uint8_t *buffer, uint8_t len);
+  typedef void (*sleep_callback)(void);
+
 }
 
 class Adafruit_BLE_UART : public Stream
@@ -55,6 +57,8 @@ class Adafruit_BLE_UART : public Stream
 
   void setACIcallback(aci_callback aciEvent = NULL);
   void setRXcallback(rx_callback rxEvent = NULL);
+  void setSLEEPcallback(sleep_callback sleepCb = NULL);
+
   void setDeviceName(const char * deviceName);
 
   // Stream compatibility
@@ -71,7 +75,8 @@ class Adafruit_BLE_UART : public Stream
 
   // callbacks you can set with setCallback function for user extension
   aci_callback aci_event;
-  rx_callback  rx_event; 
+  rx_callback  rx_event;
+  sleep_callback sleep_cb;
 
   bool         debugMode;
   uint16_t     adv_timeout;

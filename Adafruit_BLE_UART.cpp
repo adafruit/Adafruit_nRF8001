@@ -159,6 +159,7 @@ Adafruit_BLE_UART::Adafruit_BLE_UART(int8_t req, int8_t rdy, int8_t rst)
 
   rx_event = NULL;
   aci_event = NULL;
+  sleep_cb = NULL;
 
   memset(device_name, 0x00, 8);
 
@@ -173,6 +174,10 @@ void Adafruit_BLE_UART::setACIcallback(aci_callback aciEvent) {
 
 void Adafruit_BLE_UART::setRXcallback(rx_callback rxEvent) {
   rx_event = rxEvent;
+}
+
+void Adafruit_BLE_UART::setSLEEPcallback(sleep_callback scb){
+  sleep_cb = scb;
 }
 
 /**************************************************************************/
@@ -458,6 +463,7 @@ void Adafruit_BLE_UART::pollACI()
     // No event in the ACI Event queue and if there is no event in the ACI command queue the arduino can go to sleep
     // Arduino can go to sleep now
     // Wakeup from sleep from the RDYN line
+    if (sleep_cb) sleep_cb();
   }
 }
 
