@@ -74,6 +74,11 @@ static const uint8_t dreqinttable[] = {
   14, 5,
   7,  6,
   18, 7,
+  // Add support for ATmega644 using the bobuino pinout via MightyCore lib
+#elif  defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__)
+  6,  2,
+  2,  0,
+  3,  1,
 #endif
 };
 
