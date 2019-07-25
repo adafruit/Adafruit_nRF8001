@@ -1,4 +1,4 @@
-# Adafruit_nRF8001 #
+# Adafruit nRF8001 [![Build Status](https://travis-ci.com/adafruit/Adafruit_nRF8001.svg?branch=master)](https://travis-ci.com/adafruit/Adafruit_nRF8001)
 
 Driver and example code for Adafruit's nRF8001 Bluetooth Low Energy Breakout.
 
