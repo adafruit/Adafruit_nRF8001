@@ -19,7 +19,7 @@ All text above, and the splash screen below must be included in any redistributi
 
 #ifdef __AVR
   #include <avr/pgmspace.h>
-#elif defined(ESP8266)
+#else
   #include <pgmspace.h>
 #endif
 
