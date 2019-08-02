@@ -27,6 +27,12 @@ All text above, and the splash screen below must be included in any redistributi
 
 #include "utility/aci_evts.h"
 
+#ifdef __AVR
+  #include <avr/pgmspace.h>
+#elif defined(ESP8266)
+  #include <pgmspace.h>
+#endif
+
 /* Uncomment the next line to display debug messages when reading/writing packets */
 //#define BLE_RW_DEBUG
 
