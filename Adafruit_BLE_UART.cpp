@@ -16,7 +16,13 @@ MIT license, check LICENSE for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
 #include <SPI.h>
-#include <avr/pgmspace.h>
+
+#ifdef __AVR
+  #include <avr/pgmspace.h>
+#elif defined(ESP8266)
+  #include <pgmspace.h>
+#endif
+
 #if defined(__AVR__)
   #include <util/delay.h>
 #endif
