@@ -1,60 +1,52 @@
-#include <string.h>
+#include "Adafruit_BLE_UART.h"
 #include <Arduino.h>
 #include <SPI.h>
-#include "Adafruit_BLE_UART.h"
+#include <string.h>
 
-#define PACKET_ACC_LEN                  (15)
-#define PACKET_GYRO_LEN                 (15)
-#define PACKET_MAG_LEN                  (15)
-#define PACKET_QUAT_LEN                 (19)
-#define PACKET_BUTTON_LEN               (6)
-#define PACKET_COLOR_LEN                (6)
-#define PACKET_LOCATION_LEN             (15)
+#define PACKET_ACC_LEN (15)
+#define PACKET_GYRO_LEN (15)
+#define PACKET_MAG_LEN (15)
+#define PACKET_QUAT_LEN (19)
+#define PACKET_BUTTON_LEN (6)
+#define PACKET_COLOR_LEN (6)
+#define PACKET_LOCATION_LEN (15)
 
 //    READ_BUFSIZE            Size of the read buffer for incoming packets
-#define READ_BUFSIZE                    (20)
-
+#define READ_BUFSIZE (20)
 
 /* Buffer to hold incoming characters */
-uint8_t packetbuffer[READ_BUFSIZE+1];
+uint8_t packetbuffer[READ_BUFSIZE + 1];
 
 /**************************************************************************/
 /*!
     @brief  Casts the four bytes at the specified address to a float
 */
 /**************************************************************************/
-float parsefloat(uint8_t *buffer) 
-{
+float parsefloat(uint8_t *buffer) {
   float f = ((float *)buffer)[0];
   return f;
 }
 
 /**************************************************************************/
-/*! 
+/*!
     @brief  Prints a hexadecimal value in plain characters
     @param  data      Pointer to the byte data
     @param  numBytes  Data length in bytes
 */
 /**************************************************************************/
-void printHex(const uint8_t * data, const uint32_t numBytes)
-{
+void printHex(const uint8_t *data, const uint32_t numBytes) {
   uint32_t szPos;
-  for (szPos=0; szPos < numBytes; szPos++) 
-  {
+  for (szPos = 0; szPos < numBytes; szPos++) {
     Serial.print(F("0x"));
     // Append leading 0 for small values
-    if (data[szPos] <= 0xF)
-    {
+    if (data[szPos] <= 0xF) {
       Serial.print(F("0"));
       Serial.print(data[szPos] & 0xf, HEX);
-    }
-    else
-    {
+    } else {
       Serial.print(data[szPos] & 0xff, HEX);
     }
     // Add a trailing space if appropriate
-    if ((numBytes > 1) && (szPos != numBytes - 1))
-    {
+    if ((numBytes > 1) && (szPos != numBytes - 1)) {
       Serial.print(F(" "));
     }
   }
@@ -66,14 +58,14 @@ void printHex(const uint8_t * data, const uint32_t numBytes)
     @brief  Waits for incoming data and parses it
 */
 /**************************************************************************/
-uint8_t readPacket(Adafruit_BLE_UART *ble, uint16_t timeout) 
-{
+uint8_t readPacket(Adafruit_BLE_UART *ble, uint16_t timeout) {
   uint16_t origtimeout = timeout, replyidx = 0;
 
   memset(packetbuffer, 0, READ_BUFSIZE);
 
   while (timeout--) {
-    if (replyidx >= 20) break;
+    if (replyidx >= 20)
+      break;
     if ((packetbuffer[1] == 'A') && (replyidx == PACKET_ACC_LEN))
       break;
     if ((packetbuffer[1] == 'G') && (replyidx == PACKET_GYRO_LEN))
@@ -90,11 +82,12 @@ uint8_t readPacket(Adafruit_BLE_UART *ble, uint16_t timeout)
       break;
 
     while (ble->available()) {
-      char c =  ble->read();
+      char c = ble->read();
       if (c == '!') {
         replyidx = 0;
       }
-      //Serial.print("0x"); Serial.print((uint8_t)c, HEX); Serial.print(" ("); Serial.write(c); Serial.print("), ");
+      // Serial.print("0x"); Serial.print((uint8_t)c, HEX); Serial.print(" (");
+      // Serial.write(c); Serial.print("), ");
       packetbuffer[replyidx] = c;
       replyidx++;
       timeout = origtimeout;
@@ -105,32 +98,30 @@ uint8_t readPacket(Adafruit_BLE_UART *ble, uint16_t timeout)
     delay(1);
   }
 
-  packetbuffer[replyidx] = 0;  // null term
+  packetbuffer[replyidx] = 0; // null term
 
-  if (!replyidx)  // no data or timeout 
+  if (!replyidx) // no data or timeout
     return 0;
-  if (packetbuffer[0] != '!')  // doesn't start with '!' packet beginning
+  if (packetbuffer[0] != '!') // doesn't start with '!' packet beginning
     return 0;
-  
+
   // check checksum!
   uint8_t xsum = 0;
-  uint8_t checksum = packetbuffer[replyidx-1];
-  
-  for (uint8_t i=0; i<replyidx-1; i++) {
+  uint8_t checksum = packetbuffer[replyidx - 1];
+
+  for (uint8_t i = 0; i < replyidx - 1; i++) {
     xsum += packetbuffer[i];
   }
   xsum = ~xsum;
 
   // Throw an error message if the checksum's don't match
-  if (xsum != checksum)
-  {
+  if (xsum != checksum) {
     Serial.print("Checksum mismatch in packet : ");
-    printHex(packetbuffer, replyidx+1);
+    printHex(packetbuffer, replyidx + 1);
     return 0;
   }
 
-  //Serial.println();
+  // Serial.println();
   // checksum passed!
   return replyidx;
 }
-

@@ -15,19 +15,21 @@
 #define PLATFORM_H__
 
 /** @file
-* @brief 
-*/
+ * @brief
+ */
 #include "Arduino.h"
 
+#define hal_pltf_clear_spi_master_config()                                     \
+  do {                                                                         \
+    SPCR = 0;                                                                  \
+  } while (0)
 
-#define hal_pltf_clear_spi_master_config() do { SPCR = 0; } while(0)
-
-//SPI2X=1 SPS0=1 SPR0=1 -> 250KHz
-//DORD=1 LSBit first
-//SPE=1  Enable the SPI
-//MSTR=1 Enable master mode
-//CPOL=0 See Section 7 in the nRF8001 PS (Clock Polarity)
-//CPHA=0 See Section 7 in the nRF8001 PS (Clock Phase)
+// SPI2X=1 SPS0=1 SPR0=1 -> 250KHz
+// DORD=1 LSBit first
+// SPE=1  Enable the SPI
+// MSTR=1 Enable master mode
+// CPOL=0 See Section 7 in the nRF8001 PS (Clock Polarity)
+// CPHA=0 See Section 7 in the nRF8001 PS (Clock Phase)
 /*
 Atmega328
 Table 18-5. Relationship Between SCK and the Oscillator Frequency
@@ -53,17 +55,22 @@ SPI2X   SPR1 SPR0 SCK Frequency
   SPCR = 0; \
   SPSR = 0; \
   SPSR = (1<<SPI2X);\
-  SPCR = ((1<<SPE)|(1<<MSTR)|(0<<SPR1) | (1<<SPR0) | (1<<DORD) | (0<<CPOL) | (0<<CPHA));}\
-while(0)
+  SPCR = ((1<<SPE)|(1<<MSTR)|(0<<SPR1) | (1<<SPR0) | (1<<DORD) | (0<<CPOL) |
+(0<<CPHA));}\ while(0)
 */
 
-#define hal_pltf_enable_spi()  do { SPCR |= _BV(SPE); } while(0)
-#define hal_pltf_disable_spi() do { SPCR &= ~_BV(SPE); } while(0)
-  
+#define hal_pltf_enable_spi()                                                  \
+  do {                                                                         \
+    SPCR |= _BV(SPE);                                                          \
+  } while (0)
+#define hal_pltf_disable_spi()                                                 \
+  do {                                                                         \
+    SPCR &= ~_BV(SPE);                                                         \
+  } while (0)
 
-
-#define hal_pltf_configure_spi_for_aci() do{\
-  hal_pltf_spi_master_config();\
-}while(0)
+#define hal_pltf_configure_spi_for_aci()                                       \
+  do {                                                                         \
+    hal_pltf_spi_master_config();                                              \
+  } while (0)
 
 #endif /* PLATFORM_H__ */

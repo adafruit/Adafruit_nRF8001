@@ -1,4 +1,4 @@
-# Adafruit_nRF8001 #
+# Adafruit_nRF8001 [![Build Status](https://github.com/adafruit/Adafruit_nRF8001/workflows/Arduino%20Library%20CI/badge.svg)](https://github.com/adafruit/Adafruit_nRF8001/actions)[![Documentation](https://github.com/adafruit/ci-arduino/blob/master/assets/doxygen_badge.svg)](http://adafruit.github.io/Adafruit_nRF8001/html/index.html)
 
 Driver and example code for Adafruit's nRF8001 Bluetooth Low Energy Breakout.
 

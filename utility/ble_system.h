@@ -15,8 +15,8 @@
 //#define HAL_IO_LED1          6
 */
 
-#define ENABLE_INTERRUPTS()   sei()
-#define DISABLE_INTERRUPTS()  cli()
+#define ENABLE_INTERRUPTS() sei()
+#define DISABLE_INTERRUPTS() cli()
 #define ARE_INTERRUPTS_ENABLED() ((SREG & 0x80) == 0x80)
 
 #endif

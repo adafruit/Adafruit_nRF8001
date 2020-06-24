@@ -22,8 +22,10 @@
 #ifndef _acilib_DEFS_H_
 #define _acilib_DEFS_H_
 
-#define ACIL_DECODE_EVT_GET_LENGTH(buffer_in) (*(buffer_in + OFFSET_ACI_EVT_T_LEN))
+#define ACIL_DECODE_EVT_GET_LENGTH(buffer_in)                                  \
+  (*(buffer_in + OFFSET_ACI_EVT_T_LEN))
 
-#define ACIL_DECODE_EVT_GET_OPCODE(buffer_in) (*(buffer_in + OFFSET_ACI_EVT_T_EVT_OPCODE))
+#define ACIL_DECODE_EVT_GET_OPCODE(buffer_in)                                  \
+  (*(buffer_in + OFFSET_ACI_EVT_T_EVT_OPCODE))
 
 #endif /* _acilib_DEFS_H_ */
