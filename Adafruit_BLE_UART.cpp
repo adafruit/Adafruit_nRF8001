@@ -31,11 +31,11 @@
 #if defined(__AVR__)
 #include <util/delay.h>
 #endif
-#include "uart/services.h"
-#include <aci_setup.h>
+#include <stdlib.h>
 #include <ble_system.h>
 #include <lib_aci.h>
-#include <stdlib.h>
+#include <aci_setup.h>
+#include "uart/services.h"
 
 #include "Adafruit_BLE_UART.h"
 
